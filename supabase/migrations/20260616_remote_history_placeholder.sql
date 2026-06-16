@@ -1,0 +1,1 @@
+-- Placeholder to align the plain 20260616 migration version recorded in the linked Supabase project.
