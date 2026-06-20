@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getUnifiedJobByIdentifier, jobToDbRow } from "@/lib/jobs/live";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import { ensurePersistedJobByIdentifier } from "@/lib/jobs/persistence";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,45 +12,50 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   if (!user) {
     return NextResponse.json(
-      { message: "Please sign in to save jobs." },
+      { message: "Please sign in to save jobs.", redirectTo: `/login?next=/jobs/${identifier}` },
       { status: 401 },
     );
   }
 
-  const job = await getUnifiedJobByIdentifier(identifier);
-  if (!job) {
-    return NextResponse.json({ message: "Job not found." }, { status: 404 });
+  const persistedJob = await ensurePersistedJobByIdentifier(identifier);
+  if (!persistedJob.id || !persistedJob.job) {
+    return NextResponse.json({ message: persistedJob.message ?? "Job not found." }, { status: 404 });
   }
 
-  const admin = getSupabaseAdminClient();
-  if (!admin) {
-    return NextResponse.json(
-      { message: "Saving jobs requires Supabase service role configuration." },
-      { status: 503 },
-    );
-  }
-
-  const jobResult = await admin
-    .from("jobs")
-    .upsert(jobToDbRow(job) as never, { onConflict: "slug" })
+  const { data: existingSave } = await supabase
+    .from("saved_jobs")
     .select("id")
-    .single();
-  const persistedJob = jobResult.data as { id: string } | null;
-  const jobError = jobResult.error;
+    .eq("user_id", user.id)
+    .eq("job_id", persistedJob.id)
+    .maybeSingle();
+  const existingSaveRow = existingSave as { id: string } | null;
 
-  if (jobError || !persistedJob?.id) {
-    return NextResponse.json(
-      { message: "We could not prepare this job for saving." },
-      { status: 500 },
-    );
+  if (existingSaveRow?.id) {
+    const { error } = await supabase
+      .from("saved_jobs")
+      .delete()
+      .eq("id", existingSaveRow.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      return NextResponse.json(
+        { message: "We could not update this saved job right now." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      saved: false,
+      message: "Job removed from your saved list.",
+    });
   }
 
-  const { error } = await admin.from("saved_jobs").upsert(
+  const { error } = await supabase.from("saved_jobs").insert(
     {
       user_id: user.id,
       job_id: persistedJob.id,
     } as never,
-    { onConflict: "user_id,job_id" },
   );
 
   if (error) {
@@ -60,8 +65,20 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     );
   }
 
+  await recordAnalyticsEvent({
+    userId: user.id,
+    jobId: persistedJob.id,
+    eventName: "job_saved",
+    eventData: {
+      jobIdentifier: identifier,
+      jobSlug: persistedJob.job.slug,
+      sourceType: persistedJob.job.sourceType ?? null,
+    },
+  });
+
   return NextResponse.json({
     ok: true,
+    saved: true,
     message: "Job saved to your dashboard shortlist.",
   });
 }

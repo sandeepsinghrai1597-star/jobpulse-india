@@ -8,6 +8,24 @@ export interface CurrentUser {
   role: UserRole;
   name: string;
   phone?: string | null;
+  currentPlan?: string | null;
+  subscriptionStatus?: "active" | "paused" | "unsubscribed" | null;
+}
+
+function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRole: unknown): UserRole {
+  if (appMetadataRole === "admin") {
+    return "admin";
+  }
+
+  if (appMetadataRole === "employer" || appMetadataRole === "candidate") {
+    return appMetadataRole;
+  }
+
+  if (userMetadataRole === "employer" || userMetadataRole === "candidate") {
+    return userMetadataRole;
+  }
+
+  return "candidate";
 }
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
@@ -22,21 +40,18 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
   const { data } = await supabase
     .from("users")
-    .select("id, email, role, name, phone")
+    .select("id, email, role, name, phone, current_plan, subscription_status")
     .eq("id", user.id)
     .maybeSingle();
 
   if (!data) {
-    const derivedRole = user.user_metadata?.role;
-    const role: UserRole =
-      derivedRole === "admin" || derivedRole === "employer" || derivedRole === "candidate"
-        ? derivedRole
-        : "candidate";
-
     return {
       id: user.id,
       email: user.email,
-      role,
+      role: getRoleFromAuthMetadata(
+        user.app_metadata?.role,
+        user.user_metadata?.role,
+      ),
       name:
         user.user_metadata?.full_name ??
         user.user_metadata?.name ??
@@ -44,6 +59,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
         "User",
       phone:
         typeof user.phone === "string" && user.phone.length > 0 ? user.phone : null,
+      currentPlan: null,
+      subscriptionStatus: null,
     };
   }
 
@@ -53,5 +70,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     role: data.role,
     name: data.name,
     phone: data.phone,
+    currentPlan: data.current_plan,
+    subscriptionStatus: data.subscription_status,
   };
 });

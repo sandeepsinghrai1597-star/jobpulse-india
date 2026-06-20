@@ -3,21 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Mail, Lock, ArrowRight } from "lucide-react";
 import { loginSchema } from "@/lib/validation/schemas";
 import { createClient } from "@/lib/supabase/client";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
-function getRoleHome(role: "candidate" | "employer" | "admin") {
-  if (role === "admin") return "/admin";
-  if (role === "employer") return "/employer";
-  return "/dashboard";
-}
 
 export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
   const router = useRouter();
-  const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +27,16 @@ export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }
 
     setIsSubmitting(true);
 
-    const { error: signInError, data } = await supabase.auth.signInWithPassword(parsed.data);
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch {
+      setError("Supabase auth is not configured. Add the public Supabase keys to your environment.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword(parsed.data);
 
     if (signInError) {
       setError(signInError.message);
@@ -44,43 +45,92 @@ export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }
     }
 
     router.refresh();
-    const signedInRole = data.user?.user_metadata?.role;
-    const roleHome =
-      signedInRole === "admin" || signedInRole === "employer" || signedInRole === "candidate"
-        ? getRoleHome(signedInRole)
-        : "/dashboard";
-    router.push(redirectTo === "/dashboard" ? roleHome : redirectTo);
+    router.push(redirectTo);
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <Input
-        placeholder="Email"
-        type="email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-      />
-      <Input
-        placeholder="Password"
-        type="password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-      />
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      {/* Email Input */}
+      <div className="space-y-2">
+        <label htmlFor="email" className="text-sm font-semibold text-slate-900">
+          Email Address
+        </label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Password Input */}
+      <div className="space-y-2">
+        <label htmlFor="password" className="text-sm font-semibold text-slate-900">
+          Password
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Error Alert */}
       {error ? (
-        <Alert variant="destructive">
-          <AlertTitle>Sign-in failed</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="font-semibold text-red-900">Sign-in failed</p>
+          <p className="mt-1 text-sm text-red-800">{error}</p>
+        </div>
       ) : null}
-      <Button className="w-full rounded-full" disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Signing in..." : "Sign In"}
+
+      {/* Submit Button */}
+      <Button
+        disabled={isSubmitting}
+        type="submit"
+        className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        {isSubmitting ? (
+          <>
+            <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            Signing in...
+          </>
+        ) : (
+          <>
+            Sign In
+            <ArrowRight className="h-4 w-4" />
+          </>
+        )}
       </Button>
-      <p className="text-sm text-muted-foreground">
-        New here?{" "}
-        <Link href="/signup" className="font-semibold text-primary">
-          Create an account
+
+      {/* Footer Links */}
+      <div className="space-y-3 border-t border-slate-200 pt-5">
+        <Link
+          href="/auth/forgot-password"
+          className="flex items-center justify-center gap-1 text-sm font-semibold text-blue-600 transition-all duration-200 hover:text-blue-700 hover:underline decoration-2 underline-offset-2"
+        >
+          Forgot password?
         </Link>
-      </p>
+        <p className="text-center text-sm text-slate-600">
+          New here?{" "}
+          <Link
+            href="/signup"
+            className="font-semibold text-blue-600 transition-all duration-200 hover:text-blue-700 hover:underline decoration-2 underline-offset-2"
+          >
+            Create an account
+          </Link>
+        </p>
+      </div>
     </form>
   );
 }

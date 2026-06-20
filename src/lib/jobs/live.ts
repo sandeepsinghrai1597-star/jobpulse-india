@@ -1,5 +1,5 @@
-import { jobs as seededJobs } from "@/lib/data/site";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import type { Job } from "@/types";
 
 const NCS_HOME_URL = "https://www.ncs.gov.in/";
@@ -217,15 +217,94 @@ export interface SupabaseJobRow {
   work_mode: "remote" | "hybrid" | "onsite" | null;
   education_required: string | null;
   experience_required: string | null;
+  experience_min?: number | null;
+  experience_max?: number | null;
   industry: string | null;
-  status: "active" | "expired" | "draft";
+  openings: number | null;
+  recruiter_contact: string | null;
+  status: "draft" | "pending" | "active" | "expired" | "rejected";
+  approval_status?: "pending" | "approved" | "rejected" | null;
+  no_candidate_payment?: boolean | null;
+  salary_disclosed?: boolean | null;
+  government_source_verified?: boolean | null;
+  suspicious_flags?: string[] | null;
+  is_suspicious?: boolean | null;
+  moderation_notes?: string | null;
+  is_featured?: boolean | null;
   application_url: string | null;
   deadline: string | null;
   source_type: "employer" | "admin" | "official" | "partner" | null;
   source_url: string | null;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
 }
+
+const JOB_PUBLIC_SELECT = [
+  "id",
+  "slug",
+  "category_slug",
+  "title",
+  "company_name",
+  "description",
+  "responsibilities",
+  "requirements",
+  "skills",
+  "salary_min",
+  "salary_max",
+  "salary_type",
+  "city",
+  "state",
+  "country",
+  "job_type",
+  "work_mode",
+  "education_required",
+  "experience_required",
+  "industry",
+  "openings",
+  "recruiter_contact",
+  "status",
+  "approval_status",
+  "is_featured",
+  "application_url",
+  "deadline",
+  "source_type",
+  "source_url",
+  "created_at",
+  "updated_at",
+].join(", ");
+
+const JOB_OFFICIAL_SELECT = [
+  "id",
+  "slug",
+  "category_slug",
+  "title",
+  "company_name",
+  "description",
+  "responsibilities",
+  "requirements",
+  "skills",
+  "salary_min",
+  "salary_max",
+  "salary_type",
+  "city",
+  "state",
+  "country",
+  "job_type",
+  "work_mode",
+  "education_required",
+  "experience_required",
+  "industry",
+  "openings",
+  "recruiter_contact",
+  "status",
+  "application_url",
+  "deadline",
+  "source_type",
+  "source_url",
+  "created_at",
+  "updated_at",
+].join(", ");
 
 export function dbRowToJob(row: SupabaseJobRow): Job {
   const locationParts = [row.city, row.state].filter(Boolean);
@@ -255,21 +334,36 @@ export function dbRowToJob(row: SupabaseJobRow): Job {
     country: row.country ?? "India",
     workMode: row.work_mode ?? "onsite",
     experienceRequired: row.experience_required ?? "Check official listing",
+    experienceMin: row.experience_min ?? null,
+    experienceMax: row.experience_max ?? null,
     educationRequired: row.education_required ?? "Check official listing",
     jobType: row.job_type ?? "full-time",
     industry: row.industry ?? "General",
-    openings: 0,
+    openings: row.openings ?? 0,
     applicationDeadline: row.deadline ?? "Check official listing",
-    recruiterContact: "",
+    recruiterContact: row.recruiter_contact ?? "",
     applicationUrl: row.application_url ?? row.source_url ?? NCS_HOME_URL,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     status: row.status,
+    featured: row.is_featured ?? false,
+    noCandidatePayment: row.no_candidate_payment ?? true,
+    salaryDisclosed: row.salary_disclosed ?? true,
+    governmentSourceVerified: row.government_source_verified ?? false,
+    suspiciousFlags: row.suspicious_flags ?? [],
+    isSuspicious: row.is_suspicious ?? false,
+    moderationNotes: row.moderation_notes ?? undefined,
     sourceUrl: row.source_url ?? undefined,
     sourceType: row.source_type ?? undefined,
-    sourceName: row.source_type === "official" ? "Official Source" : undefined,
+    sourceName:
+      row.source_type === "official"
+        ? "Official Source"
+        : row.source_type === "admin"
+          ? "JobPulse India"
+          : undefined,
     importedAt: row.updated_at,
-    officialVerified: row.source_type === "official",
+    officialVerified: row.source_type === "official" || Boolean(row.government_source_verified),
+    publishedAt: row.published_at ?? null,
   };
 }
 
@@ -312,6 +406,9 @@ export function jobToDbRow(job: Job) {
     experience_required: job.experienceRequired,
     industry: job.industry,
     status: job.status,
+    approval_status: "approved" as const,
+    openings: job.openings,
+    recruiter_contact: job.recruiterContact,
     application_url: job.applicationUrl,
     deadline: parsedDeadline ?? isoDeadline,
     source_type: job.sourceType ?? "official",
@@ -320,15 +417,13 @@ export function jobToDbRow(job: Job) {
   };
 }
 
-async function loadOfficialJobsFromSupabase() {
+export async function loadOfficialJobsFromSupabase() {
   const admin = getSupabaseAdminClient();
   if (!admin) return [];
 
   const { data, error } = await admin
     .from("jobs")
-    .select(
-      "id, slug, category_slug, title, company_name, description, responsibilities, requirements, skills, salary_min, salary_max, salary_type, city, state, country, job_type, work_mode, education_required, experience_required, industry, status, application_url, deadline, source_type, source_url, created_at, updated_at",
-    )
+    .select(JOB_OFFICIAL_SELECT)
     .eq("source_type", "official")
     .eq("status", "active")
     .order("updated_at", { ascending: false });
@@ -391,22 +486,26 @@ export function dedupeJobs(input: Job[]) {
   });
 }
 
+async function getPublishedJobsClient() {
+  return getSupabaseAdminClient() ?? (await createClient());
+}
+
 export async function getUnifiedJobs() {
-  if (process.env.ENABLE_LIVE_JOB_IMPORT !== "true") {
-    return seededJobs;
+  const client = await getPublishedJobsClient();
+  const { data, error } = await client
+    .from("jobs")
+    .select(JOB_PUBLIC_SELECT)
+    .eq("approval_status", "approved")
+    .eq("status", "active")
+    .order("is_featured", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return [];
   }
 
-  const persistedOfficialJobs = await loadOfficialJobsFromSupabase();
-  if (persistedOfficialJobs.length > 0) {
-    return dedupeJobs([...persistedOfficialJobs, ...seededJobs]);
-  }
-
-  try {
-    const liveJobs = await fetchNcsLiveJobs();
-    return dedupeJobs([...liveJobs, ...seededJobs]);
-  } catch {
-    return seededJobs;
-  }
+  return (data as SupabaseJobRow[]).map((row) => dbRowToJob(row));
 }
 
 export async function getUnifiedJobBySlug(slug: string) {

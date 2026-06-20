@@ -46,7 +46,7 @@ export default async function CandidateApplicationsPage() {
     <DashboardShell
       role="candidate"
       title="Applications tracker"
-      description="Track verified applications, status movement, and the jobs you have already submitted."
+      description="Track applications, status movement, and the jobs you have already submitted."
     >
       <div className="grid gap-4">
         {applications.length > 0 ? (
@@ -78,13 +78,13 @@ export default async function CandidateApplicationsPage() {
             </Card>
           ))
         ) : (
-          <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
-            <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
-              No verified applications yet. Complete your profile, request verification, and then
-              start applying from the jobs page.
-            </CardContent>
-          </Card>
-        )}
+            <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+              <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
+              No applications yet. Start applying from job detail pages and your tracker will show
+              updates here.
+              </CardContent>
+            </Card>
+          )}
       </div>
     </DashboardShell>
   );

@@ -1,299 +1,269 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Bot,
+  BriefcaseBusiness,
+  Building2,
+  CheckCircle2,
+  Cloud,
+  Code,
+  CreditCard,
+  Database,
   FileSearch,
+  Film,
   GraduationCap,
   Landmark,
+  Layers,
+  MessageCircle,
   MessageSquareText,
+  Music,
+  Package,
+  Palette,
+  Search,
+  Send,
   Sparkles,
+  Square,
   Target,
+  Zap,
 } from "lucide-react";
-import { blogPosts, governmentJobs, jobCategories, jobs, testimonials } from "@/lib/data/site";
+import { jobCategories, jobs } from "@/lib/data/site";
 import type { Job } from "@/types";
 import { JobCard } from "@/components/jobs/job-card";
-import { SectionHeading } from "@/components/shared/section-heading";
-import { SearchBar } from "@/components/shared/search-bar";
+import { HeroSection } from "@/components/marketing/hero-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-
-const aiPrompts = [
-  "I am BCA graduate. What jobs should I apply for?",
-  "How can I become a data analyst?",
-  "Improve my resume for fresher jobs.",
-];
 
 const toolCards = [
   {
     icon: FileSearch,
-    title: "Resume ATS Analyzer",
-    description: "Get a score, keyword gaps, and role-specific improvement suggestions.",
+    title: "Resume Analyzer",
+    description: "ATS score, missing keywords, and recruiter-style improvements.",
     href: "/resume-analyzer",
   },
   {
     icon: Sparkles,
     title: "Resume Builder",
-    description: "Create ATS-friendly resumes for fresher, IT, sales, banking, and internship roles.",
+    description: "Build clean, role-ready resumes for fresher and experienced jobs.",
     href: "/resume-builder",
   },
   {
     icon: MessageSquareText,
-    title: "Interview Preparation",
-    description: "Practice HR, technical, behavioral, and fresher interview questions with AI.",
+    title: "Interview Prep",
+    description: "Practice HR, technical, behavioral, and fresher interview answers.",
     href: "/interview-preparation",
   },
 ];
 
+const marqueeLogos = [
+  { name: "Spotify", icon: Music, accent: "text-emerald-600" },
+  { name: "Netflix", icon: Film, accent: "text-rose-600" },
+  { name: "Amazon", icon: Package, accent: "text-amber-600" },
+  { name: "Google", icon: Search, accent: "text-slate-900" },
+  { name: "Reddit", icon: MessageCircle, accent: "text-orange-500" },
+  { name: "GitHub", icon: Code, accent: "text-slate-800" },
+  { name: "Slack", icon: Send, accent: "text-purple-600" },
+  { name: "Figma", icon: Square, accent: "text-indigo-600" },
+  { name: "Stripe", icon: CreditCard, accent: "text-blue-600" },
+  { name: "Discord", icon: Cloud, accent: "text-indigo-500" },
+  { name: "Zapier", icon: Zap, accent: "text-orange-600" },
+  { name: "GitLab", icon: Code, accent: "text-orange-700" },
+  { name: "Notion", icon: Palette, accent: "text-slate-950" },
+  { name: "HashiCorp", icon: Building2, accent: "text-slate-700" },
+  { name: "Intercom", icon: MessageCircle, accent: "text-blue-500" },
+  { name: "InVision", icon: Layers, accent: "text-pink-600" },
+  { name: "ConvertKit", icon: Database, accent: "text-cyan-600" },
+  { name: "Buffer", icon: Zap, accent: "text-slate-600" },
+  { name: "Automattic", icon: Code, accent: "text-blue-900" },
+  { name: "Calendly", icon: BriefcaseBusiness, accent: "text-slate-700" },
+  { name: "Typeform", icon: Send, accent: "text-lime-600" },
+  { name: "Miro", icon: Palette, accent: "text-yellow-600" },
+];
+
+const quickSearches = [
+  { label: "Remote jobs", href: "/remote-jobs", icon: Search },
+  { label: "Fresher jobs", href: "/fresher-jobs", icon: GraduationCap },
+  { label: "Government jobs", href: "/government-jobs", icon: Landmark },
+  { label: "Internships", href: "/internships", icon: Target },
+];
+
 export function HomePage({ latestJobs = jobs.slice(0, 4) }: { latestJobs?: Job[] }) {
   return (
-    <div className="space-y-20 pb-20">
-      <section className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-        <div className="grid gap-10 rounded-[2rem] border border-white/10 bg-slate-950/60 px-6 py-10 shadow-2xl shadow-cyan-950/20 backdrop-blur md:grid-cols-[1.15fr_0.85fr] md:px-10 md:py-12">
-          <div className="space-y-8">
-            <Badge className="rounded-full bg-cyan-400/15 px-4 py-1 text-cyan-200 hover:bg-cyan-400/15">
-              India&apos;s AI Career Companion
-            </Badge>
-            <div className="space-y-5">
-              <h1 className="font-heading text-4xl font-semibold tracking-tight text-slate-50 md:text-6xl">
-                Find Jobs Faster With Your AI Career Assistant
-              </h1>
-              <p className="max-w-2xl text-lg leading-8 text-slate-300">
-                Search jobs, improve your resume, prepare for interviews, and get daily career guidance built for Indian students, freshers, and professionals.
-              </p>
-            </div>
-            <SearchBar />
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full">
-                <Link href="/jobs">Find Jobs</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full">
-                <Link href="/resume-builder">Upload Resume</Link>
-              </Button>
-              <Button asChild size="lg" variant="secondary" className="rounded-full">
-                <Link href="/pricing">See Plans</Link>
-              </Button>
+    <div className="pb-16">
+      <HeroSection />
+
+      <section className="w-full bg-slate-50 py-14">
+        <div className="px-8 lg:px-12">
+          <div className="mx-auto flex w-full flex-col items-center text-center">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              Awesome Companies Hiring for Remote Jobs*
+            </h2>
+          </div>
+
+          <div className="relative mt-10 overflow-hidden rounded-[2rem] bg-slate-100 p-6 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.18)]">
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-slate-100 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-slate-100 to-transparent" />
+
+            <div className="group overflow-hidden">
+              <div className="marquee-track flex w-max items-center gap-6 px-4 py-4 animate-[marquee_24s_linear_infinite] transition-all duration-300 group-hover:[animation-play-state:paused]">
+                {[...marqueeLogos, ...marqueeLogos].map((logo, index) => {
+                  const LogoIcon = logo.icon;
+                  return (
+                    <div
+                      key={`${logo.name}-${index}`}
+                      className="flex min-w-[160px] items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-4 shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      <LogoIcon className={`h-6 w-6 ${logo.accent}`} />
+                      <span className={`text-base font-semibold ${logo.accent}`}>{logo.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <Card className="rounded-[1.75rem] border-white/10 bg-slate-900/90 text-white shadow-lg">
-            <CardContent className="space-y-6 p-6">
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300">
-                  <Bot className="size-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-cyan-200">AI Career Agent</p>
-                  <p className="text-sm text-slate-300">Guidance, matching, and roadmap suggestions</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {aiPrompts.map((prompt) => (
-                  <div key={prompt} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-100">
-                    {prompt}
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
-                <p className="text-sm font-medium text-emerald-200">Built for mobile-first India</p>
-                <p className="mt-1 text-sm leading-6 text-emerald-100/90">
-                  English-first UI, Hindi-friendly copy, fresher job focus, and local city/category landing pages for SEO growth.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {[
-          { label: "Active jobs", value: "12K+" },
-          { label: "AI resume checks", value: "48K+" },
-          { label: "Interview questions", value: "1.2L+" },
-          { label: "Cities covered", value: "200+" },
-        ].map((item) => (
-          <Card key={item.label} className="rounded-3xl border-white/10 bg-white/5 backdrop-blur">
-            <CardContent className="space-y-2 p-5">
-              <p className="text-3xl font-semibold tracking-tight text-slate-50">{item.value}</p>
-              <p className="text-sm text-muted-foreground">{item.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Popular Categories"
-          title="Explore the job paths candidates search most"
-          description="Optimized for freshers, local hiring, remote opportunities, and category-led discovery."
-        />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {jobCategories.map((category) => (
-            <Card key={category} className="rounded-3xl border-white/10 bg-white/5 backdrop-blur">
-              <CardContent className="flex items-center justify-between p-5">
-                <p className="font-medium text-slate-100">{category}</p>
-                <ArrowRight className="size-4 text-primary" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <SectionHeading
-            eyebrow="Latest Jobs"
-            title="Fresh job listings ready to apply"
-            description="Structured job cards with salary, experience, education, and quick apply context."
-          />
-          <Button asChild variant="outline" className="rounded-full">
-            <Link href="/jobs">View all jobs</Link>
-          </Button>
-        </div>
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          {latestJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="rounded-[1.75rem] border-white/10 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-            <CardContent className="space-y-4 p-6">
-              <Target className="size-10 text-cyan-200" />
-              <h3 className="font-heading text-2xl font-semibold">AI Career Agent</h3>
-              <p className="text-sm leading-6 text-blue-50/90">
-                Understand role fit, skill gaps, salary range, and a 7-day action plan.
-              </p>
-              <Button asChild variant="secondary" className="rounded-full">
-                <Link href="/career-agent">Start chat</Link>
-              </Button>
-            </CardContent>
-          </Card>
-          <Card className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur lg:col-span-2">
-            <CardContent className="grid gap-5 p-6 md:grid-cols-3">
-              {toolCards.map((tool) => (
-                <Link
-                  key={tool.title}
-                  href={tool.href}
-                  className="rounded-3xl border border-white/10 p-5 transition hover:border-primary/30 hover:bg-white/5"
-                >
-                  <tool.icon className="mb-4 size-8 text-primary" />
-                  <h3 className="font-semibold text-slate-50">{tool.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{tool.description}</p>
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-          <Card className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
-            <CardContent className="space-y-6 p-6">
-              <div className="flex items-center gap-3">
-                <Landmark className="size-8 text-primary" />
-                <div>
-                  <h3 className="font-heading text-2xl font-semibold">Government Jobs Hub</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Official links, last dates, and clear disclaimers
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {governmentJobs.map((job) => (
-                  <div key={job.id} className="rounded-2xl border border-white/10 p-4">
-                    <p className="font-medium text-slate-50">{job.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {job.department} · Last date {job.lastDate}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-amber-700">
-                Always verify from the official website before applying.
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-[1.75rem] border-white/10 bg-slate-950 text-white">
-            <CardContent className="space-y-6 p-6">
-              <div className="flex items-center gap-3">
-                <GraduationCap className="size-8 text-cyan-300" />
-                <div>
-                  <h3 className="font-heading text-2xl font-semibold">Learning Roadmaps</h3>
-                  <p className="text-sm text-slate-300">
-                    Weekly plans to close your skill gaps faster
-                  </p>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                {[
-                  "How to become Data Analyst",
-                  "How to become Web Developer",
-                  "How to become Digital Marketer",
-                  "How to become AI Agent Developer",
-                ].map((guide) => (
-                  <div key={guide} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
-                    {guide}
-                  </div>
-                ))}
-              </div>
-              <Button asChild className="rounded-full bg-white text-slate-900 hover:bg-slate-100">
-                <Link href="/career-guide/data-analyst">View roadmaps</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Trusted by users"
-          title="Designed to feel simple, useful, and supportive"
-          description="Helpful for students, freshers, career switchers, and recruiters who want speed without confusion."
-        />
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <Card key={testimonial.name} className="rounded-3xl border-white/10 bg-white/5 backdrop-blur">
-              <CardContent className="space-y-4 p-6">
-                <p className="text-base leading-7 text-slate-300">&ldquo;{testimonial.quote}&rdquo;</p>
-                <div>
-                  <p className="font-semibold text-slate-50">{testimonial.name}</p>
-                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <SectionHeading
-            eyebrow="SEO Content"
-            title="Career guides and blog content built for ranking and learning"
-            description="Internal linking from homepage, jobs, blogs, and career guides is ready for SEO scaling."
-          />
-          <Button asChild variant="outline" className="rounded-full">
-            <Link href="/blog">Read the blog</Link>
-          </Button>
-        </div>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {blogPosts.map((post) => (
-            <Link
-              key={post.slug}
-              href={`/blog/${post.slug}`}
-              className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6 backdrop-blur transition hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10"
-            >
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                {post.category}
-              </p>
-              <h3 className="mt-3 font-heading text-2xl font-semibold text-slate-50">
-                {post.title}
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{post.excerpt}</p>
+      <section className="bg-slate-950">
+        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-300">Fast paths</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">Start with the job type you need.</h2>
+            </div>
+            <Link href="/jobs" className="text-sm font-semibold text-sky-300 hover:text-white">
+              Browse all jobs
             </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {quickSearches.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex min-h-16 items-center justify-between rounded-lg border border-white/10 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-lg"
+                >
+                  <span className="flex items-center gap-3 font-semibold text-slate-950">
+                    <Icon className="size-5 text-primary" />
+                    {item.label}
+                  </span>
+                  <ArrowRight className="size-4 text-slate-400" />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
+        <aside className="space-y-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Explore</p>
+            <h2 className="mt-2 font-heading text-2xl font-semibold text-slate-950">Popular categories</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {jobCategories.map((category) => (
+              <Badge key={category} variant="secondary" className="rounded-md border border-slate-200 bg-white px-3 py-1 text-slate-700 shadow-sm">
+                {category}
+              </Badge>
+            ))}
+          </div>
+          <Button asChild variant="outline" className="rounded-lg border-slate-300 bg-white">
+            <Link href="/jobs">See all jobs</Link>
+          </Button>
+        </aside>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Latest jobs</p>
+              <h2 className="mt-2 font-heading text-2xl font-semibold text-slate-950">
+                Fresh opportunities for this week
+              </h2>
+            </div>
+            <Link href="/jobs" className="text-sm font-semibold text-primary">
+              View all jobs
+            </Link>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            {latestJobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div className="space-y-3">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Career toolkit</p>
+              <h2 className="font-heading text-3xl font-semibold text-slate-950">
+                More than a job board.
+              </h2>
+              <p className="text-sm leading-6 text-slate-600">
+                The best platforms combine search, resume quality, interview preparation, and a
+                dashboard. JobPulse brings those workflows together for candidates and employers.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {toolCards.map((tool) => {
+                const Icon = tool.icon;
+
+                return (
+                  <Link
+                    key={tool.href}
+                    href={tool.href}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-5 transition hover:border-primary/40 hover:bg-white hover:shadow-md"
+                  >
+                    <Icon className="size-5 text-primary" />
+                    <p className="mt-4 font-semibold text-slate-950">{tool.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{tool.description}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-6 rounded-lg bg-slate-950 p-6 text-white shadow-xl shadow-slate-300/40 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-emerald-300">
+              <Building2 className="size-5" />
+              <span className="text-sm font-semibold uppercase tracking-[0.16em]">For employers</span>
+            </div>
+            <h2 className="font-heading text-3xl font-semibold">Hire faster with verified candidate workflows.</h2>
+            <p className="max-w-2xl text-sm leading-6 text-slate-300">
+              Post roles, review applicants, track shortlists, and monitor hiring performance from a
+              focused employer dashboard.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild className="rounded-lg bg-white text-slate-950 hover:bg-slate-100">
+              <Link href="/employer/jobs/new">
+                Post a job
+                <BriefcaseBusiness className="size-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-lg border-white/30 text-white hover:bg-white/10">
+              <Link href="/pricing">View plans</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            "Save jobs and build a focused shortlist",
+            "Track every application status from applied to offered",
+            "Use AI tools only where they make the workflow faster",
+          ].map((item) => (
+            <div key={item} className="flex gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <CheckCircle2 className="mt-0.5 size-5 text-emerald-600" />
+              <p className="text-sm font-medium leading-6 text-slate-700">{item}</p>
+            </div>
           ))}
         </div>
       </section>

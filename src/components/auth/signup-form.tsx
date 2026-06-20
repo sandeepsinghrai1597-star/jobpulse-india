@@ -3,22 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Mail, Lock, Phone, User } from "lucide-react";
 import { signupSchema } from "@/lib/validation/schemas";
 import { createClient } from "@/lib/supabase/client";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RoleSelector } from "@/components/auth/role-selector";
 
 export function SignupForm() {
   const router = useRouter();
-  const supabase = createClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -48,11 +40,21 @@ export function SignupForm() {
 
     setIsSubmitting(true);
 
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch {
+      setError("Supabase auth is not configured. Add the public Supabase keys to your environment.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const redirectPath = parsed.data.role === "employer" ? "/employer" : "/dashboard";
     const { error: signUpError, data } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirectPath}`,
         data: {
           full_name: parsed.data.fullName,
           phone: parsed.data.phone,
@@ -68,53 +70,133 @@ export function SignupForm() {
     }
 
     if (!data.session) {
-      setMessage("Account created. Check your email to confirm your account before signing in.");
+      setMessage(
+        "Account created. Check your email to confirm your account before signing in, unless email confirmations are disabled in Supabase Auth.",
+      );
       setIsSubmitting(false);
       return;
     }
 
     router.refresh();
-    router.push(parsed.data.role === "employer" ? "/employer" : "/dashboard");
+    router.push(redirectPath);
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <Input placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
-      <Input placeholder="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-      <Input placeholder="Phone number" value={phone} onChange={(event) => setPhone(event.target.value)} />
-      <Select value={role} onValueChange={(value: "candidate" | "employer") => setRole(value)}>
-        <SelectTrigger className="w-full rounded-2xl">
-          <SelectValue placeholder="Choose account type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="candidate">Candidate</SelectItem>
-          <SelectItem value="employer">Employer</SelectItem>
-        </SelectContent>
-      </Select>
-      <Input
-        placeholder="Password"
-        type="password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-      />
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      {/* Full Name Input */}
+      <div className="space-y-2">
+        <label htmlFor="fullname" className="text-sm font-semibold text-slate-900">
+          Full Name
+        </label>
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            id="fullname"
+            type="text"
+            placeholder="John Doe"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Email Input */}
+      <div className="space-y-2">
+        <label htmlFor="email" className="text-sm font-semibold text-slate-900">
+          Email Address
+        </label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Phone Input */}
+      <div className="space-y-2">
+        <label htmlFor="phone" className="text-sm font-semibold text-slate-900">
+          Phone Number
+        </label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            id="phone"
+            type="tel"
+            placeholder="+91 98765 43210"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Role Selector */}
+      <RoleSelector value={role} onChange={setRole} />
+
+      {/* Password Input */}
+      <div className="space-y-2">
+        <label htmlFor="password" className="text-sm font-semibold text-slate-900">
+          Password
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            id="password"
+            type="password"
+            placeholder="Minimum 8 characters"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Error Alert */}
       {error ? (
-        <Alert variant="destructive">
-          <AlertTitle>Signup failed</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="font-semibold text-red-900">Signup failed</p>
+          <p className="mt-1 text-sm text-red-800">{error}</p>
+        </div>
       ) : null}
+
+      {/* Success Message */}
       {message ? (
-        <Alert>
-          <AlertTitle>Check your email</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-900">Check your email</p>
+          <p className="mt-1 text-sm text-amber-800">{message}</p>
+        </div>
       ) : null}
-      <Button className="w-full rounded-full" disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Creating account..." : "Create Account"}
+
+      {/* Submit Button */}
+      <Button
+        disabled={isSubmitting}
+        type="submit"
+        className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? (
+          <span className="flex items-center justify-center gap-2">
+            <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            Creating account...
+          </span>
+        ) : (
+          "Create Account"
+        )}
       </Button>
-      <p className="text-sm text-muted-foreground">
+
+      {/* Sign In Link */}
+      <p className="text-center text-sm text-slate-600">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-primary">
+        <Link
+          href="/login"
+          className="font-semibold text-blue-600 transition-all duration-200 hover:text-blue-700 hover:underline decoration-2 underline-offset-2"
+        >
           Sign in
         </Link>
       </p>

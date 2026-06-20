@@ -57,7 +57,8 @@ npm run dev
 
 - Deploy to Vercel
 - Add the same environment variables in Vercel project settings
-- Configure Vercel Cron for `/api/cron/job-sync`
+- Set `CRON_SECRET` in Vercel so cron requests are authenticated
+- Configure Vercel Cron for `/api/cron/fetch-jobs` every 6 hours
 - Connect GA4 and Search Console after production domain setup
 
 ## Testing Checklist

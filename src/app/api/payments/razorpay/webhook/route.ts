@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import { activateSubscriptionFromPayment, mergePaymentNotes, type PaymentRecord } from "@/lib/payments/subscriptions";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 function verifySignature(body: string, signature: string | null) {
@@ -57,7 +59,19 @@ export async function POST(request: Request) {
       ? "paid"
       : payload.event === "payment.failed"
         ? "failed"
-        : payment?.status ?? "updated";
+        : payment?.status ?? "created";
+
+  const { data: paymentRowData } = await admin
+    .from("payments")
+    .select("id, user_id, plan, notes, subscription_type")
+    .eq("razorpay_order_id", orderId)
+    .maybeSingle();
+  const paymentRow = paymentRowData as PaymentRecord | null;
+
+  const paymentNotes = mergePaymentNotes(paymentRow?.notes ?? {}, {
+    webhook_event: payload.event ?? "unknown",
+    webhook_received_at: new Date().toISOString(),
+  });
 
   await admin
     .from("payments")
@@ -65,9 +79,29 @@ export async function POST(request: Request) {
       status: mappedStatus,
       razorpay_payment_id: payment?.id ?? null,
       razorpay_signature: signature,
+      notes: paymentNotes,
       updated_at: new Date().toISOString(),
     } as never)
     .eq("razorpay_order_id", orderId);
+
+  if (mappedStatus === "paid" && paymentRow) {
+    await activateSubscriptionFromPayment(admin, {
+      ...(paymentRow as PaymentRecord),
+      notes: paymentNotes,
+    });
+  }
+
+  await recordAnalyticsEvent({
+    userId: paymentRow?.user_id ?? null,
+    paymentId: paymentRow?.id ?? null,
+    eventName: "payment_event",
+    eventData: {
+      status: mappedStatus,
+      plan: paymentRow?.plan ?? null,
+      source: "webhook",
+      razorpayEvent: payload.event ?? "unknown",
+    },
+  });
 
   return NextResponse.json({ ok: true });
 }

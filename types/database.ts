@@ -51,33 +51,69 @@ export type Database = {
       };
       analytics_events: {
         Row: {
+          candidate_id: string | null;
           created_at: string;
+          employer_id: string | null;
           event_data: Json;
           event_name: string;
           id: string;
+          job_id: string | null;
+          payment_id: string | null;
           session_id: string | null;
           updated_at: string;
           user_id: string | null;
         };
         Insert: {
+          candidate_id?: string | null;
           created_at?: string;
+          employer_id?: string | null;
           event_data?: Json;
           event_name: string;
           id?: string;
+          job_id?: string | null;
+          payment_id?: string | null;
           session_id?: string | null;
           updated_at?: string;
           user_id?: string | null;
         };
         Update: {
+          candidate_id?: string | null;
           created_at?: string;
+          employer_id?: string | null;
           event_data?: Json;
           event_name?: string;
           id?: string;
+          job_id?: string | null;
+          payment_id?: string | null;
           session_id?: string | null;
           updated_at?: string;
           user_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "analytics_events_candidate_id_fkey";
+            columns: ["candidate_id"];
+            referencedRelation: "candidate_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "analytics_events_employer_id_fkey";
+            columns: ["employer_id"];
+            referencedRelation: "employer_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "analytics_events_job_id_fkey";
+            columns: ["job_id"];
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "analytics_events_payment_id_fkey";
+            columns: ["payment_id"];
+            referencedRelation: "payments";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "analytics_events_user_id_fkey";
             columns: ["user_id"];
@@ -393,13 +429,18 @@ export type Database = {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_status"];
           city: string | null;
+          company_email: string | null;
+          company_email_verified: boolean;
           company_id: string | null;
           company_name: string;
           created_at: string;
           description: string | null;
+          domain_verification_status: string;
           id: string;
           industry: string | null;
           logo_url: string | null;
+          recruiter_name: string | null;
+          recruiter_phone: string | null;
           state: string | null;
           updated_at: string;
           user_id: string;
@@ -409,13 +450,18 @@ export type Database = {
         Insert: {
           approval_status?: Database["public"]["Enums"]["approval_status"];
           city?: string | null;
+          company_email?: string | null;
+          company_email_verified?: boolean;
           company_id?: string | null;
           company_name: string;
           created_at?: string;
           description?: string | null;
+          domain_verification_status?: string;
           id?: string;
           industry?: string | null;
           logo_url?: string | null;
+          recruiter_name?: string | null;
+          recruiter_phone?: string | null;
           state?: string | null;
           updated_at?: string;
           user_id: string;
@@ -425,13 +471,18 @@ export type Database = {
         Update: {
           approval_status?: Database["public"]["Enums"]["approval_status"];
           city?: string | null;
+          company_email?: string | null;
+          company_email_verified?: boolean;
           company_id?: string | null;
           company_name?: string;
           created_at?: string;
           description?: string | null;
+          domain_verification_status?: string;
           id?: string;
           industry?: string | null;
           logo_url?: string | null;
+          recruiter_name?: string | null;
+          recruiter_phone?: string | null;
           state?: string | null;
           updated_at?: string;
           user_id?: string;
@@ -634,6 +685,8 @@ export type Database = {
           job_id: string;
           reason: string;
           reported_by: string | null;
+          resolution_notes: string | null;
+          reviewed_by: string | null;
           status: Database["public"]["Enums"]["report_status"];
           updated_at: string;
         };
@@ -644,6 +697,8 @@ export type Database = {
           job_id: string;
           reason: string;
           reported_by?: string | null;
+          resolution_notes?: string | null;
+          reviewed_by?: string | null;
           status?: Database["public"]["Enums"]["report_status"];
           updated_at?: string;
         };
@@ -654,6 +709,8 @@ export type Database = {
           job_id?: string;
           reason?: string;
           reported_by?: string | null;
+          resolution_notes?: string | null;
+          reviewed_by?: string | null;
           status?: Database["public"]["Enums"]["report_status"];
           updated_at?: string;
         };
@@ -667,6 +724,12 @@ export type Database = {
           {
             foreignKeyName: "job_reports_reported_by_fkey";
             columns: ["reported_by"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_reports_reviewed_by_fkey";
+            columns: ["reviewed_by"];
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
@@ -687,15 +750,20 @@ export type Database = {
           education_required: string | null;
           employer_id: string | null;
           experience_required: string | null;
+          government_source_verified: boolean;
           id: string;
           industry: string | null;
+          is_suspicious: boolean;
           is_featured: boolean;
           job_type: Database["public"]["Enums"]["job_type"] | null;
           location: string | null;
+          moderation_notes: string | null;
+          no_candidate_payment: boolean;
           openings: number;
           recruiter_contact: string | null;
           requirements: string[];
           responsibilities: string[];
+          salary_disclosed: boolean;
           salary_max: number | null;
           salary_min: number | null;
           salary_type: Database["public"]["Enums"]["salary_type"];
@@ -706,6 +774,7 @@ export type Database = {
           source_url: string | null;
           state: string | null;
           status: Database["public"]["Enums"]["job_status"];
+          suspicious_flags: string[];
           title: string;
           updated_at: string;
           work_mode: Database["public"]["Enums"]["work_mode"] | null;
@@ -724,23 +793,31 @@ export type Database = {
           education_required?: string | null;
           employer_id?: string | null;
           experience_required?: string | null;
+          government_source_verified?: boolean;
           id?: string;
           industry?: string | null;
+          is_suspicious?: boolean;
           is_featured?: boolean;
           job_type?: Database["public"]["Enums"]["job_type"] | null;
+          location?: string | null;
+          moderation_notes?: string | null;
+          no_candidate_payment?: boolean;
           openings?: number;
           recruiter_contact?: string | null;
           requirements?: string[];
           responsibilities?: string[];
+          salary_disclosed?: boolean;
           salary_max?: number | null;
           salary_min?: number | null;
           salary_type?: Database["public"]["Enums"]["salary_type"];
+          search_vector?: unknown | null;
           skills?: string[];
           slug: string;
           source_type?: Database["public"]["Enums"]["source_type"] | null;
           source_url?: string | null;
           state?: string | null;
           status?: Database["public"]["Enums"]["job_status"];
+          suspicious_flags?: string[];
           title: string;
           updated_at?: string;
           work_mode?: Database["public"]["Enums"]["work_mode"] | null;
@@ -759,23 +836,31 @@ export type Database = {
           education_required?: string | null;
           employer_id?: string | null;
           experience_required?: string | null;
+          government_source_verified?: boolean;
           id?: string;
           industry?: string | null;
+          is_suspicious?: boolean;
           is_featured?: boolean;
           job_type?: Database["public"]["Enums"]["job_type"] | null;
+          location?: string | null;
+          moderation_notes?: string | null;
+          no_candidate_payment?: boolean;
           openings?: number;
           recruiter_contact?: string | null;
           requirements?: string[];
           responsibilities?: string[];
+          salary_disclosed?: boolean;
           salary_max?: number | null;
           salary_min?: number | null;
           salary_type?: Database["public"]["Enums"]["salary_type"];
+          search_vector?: unknown | null;
           skills?: string[];
           slug?: string;
           source_type?: Database["public"]["Enums"]["source_type"] | null;
           source_url?: string | null;
           state?: string | null;
           status?: Database["public"]["Enums"]["job_status"];
+          suspicious_flags?: string[];
           title?: string;
           updated_at?: string;
           work_mode?: Database["public"]["Enums"]["work_mode"] | null;
@@ -1080,6 +1165,64 @@ export type Database = {
           },
         ];
       };
+      job_match_scores: {
+        Row: {
+          candidate_id: string;
+          candidate_updated_at: string | null;
+          created_at: string;
+          id: string;
+          job_id: string;
+          job_updated_at: string | null;
+          match_score: number;
+          matching_skills: string[];
+          missing_skills: string[];
+          reason: string;
+          recommendation: string;
+          updated_at: string;
+        };
+        Insert: {
+          candidate_id: string;
+          candidate_updated_at?: string | null;
+          created_at?: string;
+          id?: string;
+          job_id: string;
+          job_updated_at?: string | null;
+          match_score: number;
+          matching_skills?: string[];
+          missing_skills?: string[];
+          reason: string;
+          recommendation: string;
+          updated_at?: string;
+        };
+        Update: {
+          candidate_id?: string;
+          candidate_updated_at?: string | null;
+          created_at?: string;
+          id?: string;
+          job_id?: string;
+          job_updated_at?: string | null;
+          match_score?: number;
+          matching_skills?: string[];
+          missing_skills?: string[];
+          reason?: string;
+          recommendation?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_match_scores_candidate_id_fkey";
+            columns: ["candidate_id"];
+            referencedRelation: "candidate_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_match_scores_job_id_fkey";
+            columns: ["job_id"];
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       seo_pages: {
         Row: {
           category: string | null;
@@ -1134,6 +1277,7 @@ export type Database = {
       users: {
         Row: {
           created_at: string;
+          current_plan: string;
           email: string;
           id: string;
           is_banned: boolean;
@@ -1141,10 +1285,14 @@ export type Database = {
           name: string;
           phone: string | null;
           role: Database["public"]["Enums"]["app_role"];
+          subscription_expires_at: string | null;
+          subscription_started_at: string | null;
+          subscription_status: Database["public"]["Enums"]["subscription_status"];
           updated_at: string;
         };
         Insert: {
           created_at?: string;
+          current_plan?: string;
           email: string;
           id?: string;
           is_banned?: boolean;
@@ -1152,10 +1300,14 @@ export type Database = {
           name: string;
           phone?: string | null;
           role?: Database["public"]["Enums"]["app_role"];
+          subscription_expires_at?: string | null;
+          subscription_started_at?: string | null;
+          subscription_status?: Database["public"]["Enums"]["subscription_status"];
           updated_at?: string;
         };
         Update: {
           created_at?: string;
+          current_plan?: string;
           email?: string;
           id?: string;
           is_banned?: boolean;
@@ -1163,6 +1315,9 @@ export type Database = {
           name?: string;
           phone?: string | null;
           role?: Database["public"]["Enums"]["app_role"];
+          subscription_expires_at?: string | null;
+          subscription_started_at?: string | null;
+          subscription_status?: Database["public"]["Enums"]["subscription_status"];
           updated_at?: string;
         };
         Relationships: [];

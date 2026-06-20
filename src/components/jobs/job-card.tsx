@@ -1,6 +1,16 @@
 import Link from "next/link";
-import { Building2, MapPin, Wallet } from "lucide-react";
-import type { Job } from "@/types";
+import {
+  BadgeCheck,
+  BriefcaseBusiness,
+  Building2,
+  CalendarClock,
+  GraduationCap,
+  MapPin,
+  Sparkles,
+  Wallet,
+} from "lucide-react";
+import type { Job, JobMatchSummary } from "@/types";
+import { SaveJobButton } from "@/components/jobs/save-job-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,78 +20,184 @@ function formatSalary(job: Job) {
     return "Salary not disclosed";
   }
 
-  const formattedMin = new Intl.NumberFormat("en-IN", {
+  const formatter = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(job.salaryMin);
-  const formattedMax = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(job.salaryMax);
+  });
 
-  return `${formattedMin} - ${formattedMax} / ${job.salaryType}`;
+  const minimum = formatter.format(job.salaryMin);
+  const maximum = formatter.format(job.salaryMax);
+
+  return `${minimum} - ${maximum} / ${job.salaryType}`;
 }
 
-export function JobCard({ job }: { job: Job }) {
+function formatDate(value: string | null | undefined) {
+  if (!value) {
+    return "Not specified";
+  }
+
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(parsed));
+}
+
+function formatPostedDate(job: Job) {
+  const source = job.publishedAt ?? job.createdAt;
+  const parsed = source ? Date.parse(source) : Number.NaN;
+
+  if (Number.isNaN(parsed)) {
+    return "Recently added";
+  }
+
+  const diffMs = Date.now() - parsed;
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.max(0, Math.floor(diffMs / dayMs));
+
+  if (diffDays === 0) return "Posted today";
+  if (diffDays === 1) return "Posted 1 day ago";
+  if (diffDays < 30) return `Posted ${diffDays} days ago`;
+
+  return `Posted on ${formatDate(source)}`;
+}
+
+export function JobCard({
+  job,
+  matchSummary = null,
+  isSaved = false,
+  isApplied = false,
+  isSignedIn = false,
+}: {
+  job: Job;
+  matchSummary?: JobMatchSummary | null;
+  isSaved?: boolean;
+  isApplied?: boolean;
+  isSignedIn?: boolean;
+}) {
+  const detailHref = `/jobs/${job.slug}`;
+  const applyHref = isSignedIn ? `${detailHref}#job-apply-panel` : `/login?next=${detailHref}`;
+
   return (
-    <Card className="rounded-3xl border-white/10 bg-slate-950/70 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10">
-      <CardHeader className="gap-4">
+    <Card className="rounded-[1.75rem] border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-slate-200/70">
+      <CardHeader className="gap-5 pb-3">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              {job.featured ? <Badge className="rounded-full">Featured</Badge> : null}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {job.featured ? (
+                <Badge className="rounded-full bg-amber-500 text-white">
+                  <Sparkles className="size-3.5" />
+                  Featured
+                </Badge>
+              ) : null}
+              {matchSummary ? (
+                <Badge className="rounded-full bg-sky-600 text-white">
+                  <Sparkles className="size-3.5" />
+                  AI Match {matchSummary.matchScore}%
+                </Badge>
+              ) : null}
+              {job.officialVerified ? (
+                <Badge variant="secondary" className="rounded-full bg-emerald-50 text-emerald-700">
+                  <BadgeCheck className="size-3.5" />
+                  Verified
+                </Badge>
+              ) : null}
+              <Badge variant="outline" className="rounded-full capitalize">
+                {job.jobType}
+              </Badge>
               <Badge variant="outline" className="rounded-full capitalize">
                 {job.workMode}
               </Badge>
+              {isApplied ? (
+                <Badge className="rounded-full bg-emerald-600 text-white">Applied</Badge>
+              ) : null}
             </div>
-            <CardTitle className="text-xl">{job.title}</CardTitle>
+
+            <div className="space-y-2">
+              <CardTitle className="text-xl text-slate-950">
+                <Link href={detailHref} className="hover:text-primary">
+                  {job.title}
+                </Link>
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+                <p className="flex items-center gap-2">
+                  <Building2 className="size-4" />
+                  {job.companyName}
+                </p>
+                <p className="flex items-center gap-2">
+                  <MapPin className="size-4" />
+                  {job.city}, {job.state}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-white/5 text-sm font-semibold text-primary">
+
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">
             {job.companyLogo}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-          <p className="flex items-center gap-2">
-            <Building2 className="size-4" />
-            {job.companyName}
-          </p>
-          <p className="flex items-center gap-2">
-            <MapPin className="size-4" />
-            {job.location}
-          </p>
-          <p className="flex items-center gap-2 sm:col-span-2">
-            <Wallet className="size-4" />
+
+      <CardContent className="space-y-5">
+        <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
+          <p className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+            <Wallet className="size-4 text-slate-500" />
             {formatSalary(job)}
           </p>
-        </div>
-        <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
-          {job.description}
-        </p>
-        {job.sourceName ? (
-          <p className="text-xs font-medium text-primary">
-            Source: {job.sourceName}
-            {job.officialVerified ? " · Official source" : ""}
+          <p className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+            <BriefcaseBusiness className="size-4 text-slate-500" />
+            {job.experienceRequired}
           </p>
-        ) : null}
+          <p className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+            <GraduationCap className="size-4 text-slate-500" />
+            {job.educationRequired}
+          </p>
+          <p className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+            <CalendarClock className="size-4 text-slate-500" />
+            {formatPostedDate(job)}
+          </p>
+          <p className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 sm:col-span-2 xl:col-span-2">
+            <CalendarClock className="size-4 text-slate-500" />
+            Deadline: {formatDate(job.applicationDeadline)}
+          </p>
+        </div>
+
+        <p className="line-clamp-3 text-sm leading-6 text-slate-600">{job.description}</p>
+
         <div className="flex flex-wrap gap-2">
-          {job.skills.map((skill) => (
-            <Badge key={skill} variant="secondary" className="rounded-full">
+          {job.skills.slice(0, 8).map((skill) => (
+            <Badge key={skill} variant="secondary" className="rounded-full px-3 py-1">
               {skill}
             </Badge>
           ))}
         </div>
       </CardContent>
-      <CardFooter className="flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          {job.experienceRequired} · {job.educationRequired}
-        </p>
-        <Button asChild className="rounded-full">
-          <Link href={`/jobs/${job.slug}`}>View Job</Link>
-        </Button>
+
+      <CardFooter className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/70 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          {job.sourceName ? <span>Source: {job.sourceName}</span> : null}
+          {job.sourceName && job.officialVerified ? <span>•</span> : null}
+          {job.officialVerified ? <span>Officially verified source</span> : null}
+        </div>
+
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto sm:justify-end">
+          <SaveJobButton
+            jobIdentifier={job.slug}
+            isInitiallySaved={isSaved}
+            isSignedIn={isSignedIn}
+            loginRedirectTo={`/login?next=${detailHref}`}
+            compact
+          />
+          <Button asChild className="rounded-full" variant={isApplied ? "outline" : "default"}>
+            <Link href={isApplied ? detailHref : applyHref}>{isApplied ? "View application" : "Apply"}</Link>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

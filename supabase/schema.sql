@@ -65,12 +65,95 @@ begin
 end
 $$;
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_enum e on e.enumtypid = t.oid
+    where t.typname = 'job_status'
+      and e.enumlabel = 'flagged'
+  ) then
+    alter type public.job_status add value 'flagged';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_enum e on e.enumtypid = t.oid
+    where t.typname = 'job_type'
+      and e.enumlabel = 'full_time'
+  ) then
+    alter type public.job_type add value 'full_time';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_enum e on e.enumtypid = t.oid
+    where t.typname = 'job_type'
+      and e.enumlabel = 'part_time'
+  ) then
+    alter type public.job_type add value 'part_time';
+  end if;
+end
+$$;
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
 as $$
 begin
   new.updated_at = now();
+  return new;
+end;
+$$;
+
+create or replace function public.sync_company_mvp_fields()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.is_verified := coalesce(new.is_verified, false) or coalesce(new.verified, false);
+  new.verified := new.is_verified;
+  return new;
+end;
+$$;
+
+create or replace function public.sync_job_mvp_fields()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.application_url := coalesce(new.apply_url, new.application_url);
+  new.apply_url := new.application_url;
+  return new;
+end;
+$$;
+
+create or replace function public.sync_application_user_id()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.user_id is null and new.candidate_id is not null then
+    select cp.user_id
+    into new.user_id
+    from public.candidate_profiles cp
+    where cp.id = new.candidate_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.sync_job_report_user_id()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.user_id := coalesce(new.user_id, new.reported_by);
+  new.reported_by := new.user_id;
   return new;
 end;
 $$;
@@ -127,7 +210,9 @@ begin
   );
 
   derived_role := case
-    when coalesce(new.raw_app_meta_data->>'role', new.raw_user_meta_data->>'role', 'candidate') in ('candidate', 'employer', 'admin')
+    when new.raw_app_meta_data->>'role' = 'admin'
+      then 'admin'::public.app_role
+    when coalesce(new.raw_app_meta_data->>'role', new.raw_user_meta_data->>'role', 'candidate') in ('candidate', 'employer')
       then coalesce(new.raw_app_meta_data->>'role', new.raw_user_meta_data->>'role', 'candidate')::public.app_role
     else 'candidate'::public.app_role
   end;
@@ -153,6 +238,10 @@ create table if not exists public.users (
   phone text,
   role public.app_role not null default 'candidate',
   is_banned boolean not null default false,
+  current_plan text not null default 'free',
+  subscription_status public.subscription_status not null default 'active',
+  subscription_started_at timestamptz,
+  subscription_expires_at timestamptz,
   last_seen_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -170,6 +259,7 @@ create table if not exists public.companies (
   country text not null default 'India',
   size_range text,
   description text,
+  is_verified boolean not null default false,
   verified boolean not null default false,
   rating numeric(3,2),
   created_at timestamptz not null default now(),
@@ -206,11 +296,16 @@ create table if not exists public.employer_profiles (
   user_id uuid not null unique references public.users(id) on delete cascade,
   company_id uuid references public.companies(id) on delete set null,
   company_name text not null,
+  company_email text,
+  company_email_verified boolean not null default false,
+  domain_verification_status text not null default 'pending',
   logo_url text,
   website text,
   industry text,
   city text,
   state text,
+  recruiter_name text,
+  recruiter_phone text,
   description text,
   verified boolean not null default false,
   approval_status public.approval_status not null default 'pending',
@@ -241,16 +336,27 @@ create table if not exists public.jobs (
   work_mode public.work_mode,
   education_required text,
   experience_required text,
+  experience_min integer,
+  experience_max integer,
   industry text,
   openings integer not null default 1,
   recruiter_contact text,
   status public.job_status not null default 'draft',
   approval_status public.approval_status not null default 'pending',
+  no_candidate_payment boolean not null default true,
+  salary_disclosed boolean not null default true,
+  government_source_verified boolean not null default false,
+  suspicious_flags text[] not null default '{}',
+  is_suspicious boolean not null default false,
+  moderation_notes text,
+  is_verified boolean not null default false,
   is_featured boolean not null default false,
+  apply_url text,
   application_url text,
   deadline date,
   source_type public.source_type,
   source_url text,
+  expires_at timestamptz,
   search_vector tsvector,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -259,6 +365,7 @@ create table if not exists public.jobs (
 create table if not exists public.applications (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references public.jobs(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
   candidate_id uuid not null references public.candidate_profiles(id) on delete cascade,
   resume_id uuid,
   resume_url text,
@@ -268,7 +375,8 @@ create table if not exists public.applications (
   applied_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (job_id, candidate_id)
+  unique (job_id, candidate_id),
+  unique (job_id, user_id)
 );
 
 create table if not exists public.saved_jobs (
@@ -278,6 +386,22 @@ create table if not exists public.saved_jobs (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, job_id)
+);
+
+create table if not exists public.job_match_scores (
+  id uuid primary key default gen_random_uuid(),
+  candidate_id uuid not null references public.candidate_profiles(id) on delete cascade,
+  job_id uuid not null references public.jobs(id) on delete cascade,
+  match_score integer not null check (match_score >= 0 and match_score <= 100),
+  matching_skills text[] not null default '{}',
+  missing_skills text[] not null default '{}',
+  recommendation text not null,
+  reason text not null,
+  candidate_updated_at timestamptz,
+  job_updated_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (candidate_id, job_id)
 );
 
 create table if not exists public.resumes (
@@ -302,6 +426,25 @@ alter table public.applications
 alter table public.applications
   add constraint applications_resume_id_fkey
   foreign key (resume_id) references public.resumes(id) on delete set null;
+
+update public.companies
+set is_verified = verified
+where is_verified is distinct from verified;
+
+update public.jobs
+set
+  apply_url = coalesce(apply_url, application_url),
+  is_verified = coalesce(is_verified, false) or coalesce(government_source_verified, false),
+  expires_at = coalesce(expires_at, deadline::timestamptz);
+
+update public.applications a
+set user_id = cp.user_id
+from public.candidate_profiles cp
+where a.candidate_id = cp.id
+  and a.user_id is null;
+
+alter table public.applications
+  alter column user_id set not null;
 
 create table if not exists public.resume_analyses (
   id uuid primary key default gen_random_uuid(),
@@ -447,6 +590,10 @@ create table if not exists public.notifications (
 create table if not exists public.analytics_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users(id) on delete set null,
+  candidate_id uuid references public.candidate_profiles(id) on delete set null,
+  employer_id uuid references public.employer_profiles(id) on delete set null,
+  job_id uuid references public.jobs(id) on delete set null,
+  payment_id uuid references public.payments(id) on delete set null,
   session_id text,
   event_name text not null,
   event_data jsonb not null default '{}'::jsonb,
@@ -454,16 +601,35 @@ create table if not exists public.analytics_events (
   updated_at timestamptz not null default now()
 );
 
+create index if not exists analytics_events_job_event_created_idx
+  on public.analytics_events (job_id, event_name, created_at desc);
+
+create index if not exists analytics_events_employer_event_created_idx
+  on public.analytics_events (employer_id, event_name, created_at desc);
+
+create index if not exists analytics_events_candidate_event_created_idx
+  on public.analytics_events (candidate_id, event_name, created_at desc);
+
+create index if not exists analytics_events_payment_event_created_idx
+  on public.analytics_events (payment_id, event_name, created_at desc);
+
 create table if not exists public.job_reports (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references public.jobs(id) on delete cascade,
+  user_id uuid references public.users(id) on delete set null,
   reported_by uuid references public.users(id) on delete set null,
   reason text not null,
   details text,
+  reviewed_by uuid references public.users(id) on delete set null,
+  resolution_notes text,
   status public.report_status not null default 'open',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+update public.job_reports
+set user_id = coalesce(user_id, reported_by)
+where user_id is null;
 
 create table if not exists public.admin_logs (
   id uuid primary key default gen_random_uuid(),
@@ -507,6 +673,10 @@ create table if not exists public.salary_data (
 
 alter table public.users
   add column if not exists is_banned boolean not null default false,
+  add column if not exists current_plan text not null default 'free',
+  add column if not exists subscription_status public.subscription_status not null default 'active',
+  add column if not exists subscription_started_at timestamptz,
+  add column if not exists subscription_expires_at timestamptz,
   add column if not exists last_seen_at timestamptz,
   add column if not exists updated_at timestamptz not null default now();
 
@@ -584,6 +754,20 @@ create index if not exists jobs_deadline_idx
   on public.jobs (deadline);
 create index if not exists jobs_company_id_idx
   on public.jobs (company_id);
+create index if not exists jobs_title_idx
+  on public.jobs (title);
+create index if not exists jobs_city_idx
+  on public.jobs (city);
+create index if not exists jobs_state_idx
+  on public.jobs (state);
+create index if not exists jobs_status_idx
+  on public.jobs (status);
+create index if not exists jobs_created_at_idx
+  on public.jobs (created_at desc);
+create index if not exists jobs_skills_idx
+  on public.jobs using gin (skills);
+create index if not exists jobs_work_mode_mvp_idx
+  on public.jobs (work_mode);
 create index if not exists jobs_employer_id_idx
   on public.jobs (employer_id);
 create index if not exists jobs_search_vector_idx
@@ -592,8 +776,16 @@ create index if not exists applications_candidate_status_idx
   on public.applications (candidate_id, status, updated_at desc);
 create index if not exists applications_job_status_idx
   on public.applications (job_id, status, updated_at desc);
+create index if not exists applications_user_id_idx
+  on public.applications (user_id, created_at desc);
 create index if not exists saved_jobs_user_idx
   on public.saved_jobs (user_id, created_at desc);
+create index if not exists job_match_scores_candidate_idx
+  on public.job_match_scores (candidate_id, updated_at desc);
+create index if not exists job_match_scores_job_idx
+  on public.job_match_scores (job_id, updated_at desc);
+create index if not exists job_reports_user_id_idx
+  on public.job_reports (user_id, created_at desc);
 create index if not exists resumes_user_updated_idx
   on public.resumes (user_id, updated_at desc);
 create index if not exists government_jobs_category_last_date_idx
@@ -612,6 +804,7 @@ alter table public.employer_profiles enable row level security;
 alter table public.jobs enable row level security;
 alter table public.applications enable row level security;
 alter table public.saved_jobs enable row level security;
+alter table public.job_match_scores enable row level security;
 alter table public.resumes enable row level security;
 alter table public.resume_analyses enable row level security;
 alter table public.interview_sessions enable row level security;
@@ -685,12 +878,13 @@ with check (auth.uid() = user_id or public.is_admin());
 drop policy if exists "public read active jobs" on public.jobs;
 create policy "public read active jobs"
 on public.jobs for select
-using (status = 'active' or public.is_admin() or exists (
-  select 1
-  from public.employer_profiles ep
-  where ep.id = jobs.employer_id
-    and ep.user_id = auth.uid()
-));
+using (status = 'active');
+
+drop policy if exists "admins manage all jobs" on public.jobs;
+create policy "admins manage all jobs"
+on public.jobs for all
+using (public.is_admin())
+with check (public.is_admin());
 
 drop policy if exists "employers manage own jobs" on public.jobs;
 create policy "employers manage own jobs"
@@ -777,6 +971,32 @@ with check (
 drop policy if exists "users manage own saved jobs" on public.saved_jobs;
 create policy "users manage own saved jobs"
 on public.saved_jobs for all
+using (auth.uid() = user_id or public.is_admin())
+with check (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "users manage own job match scores" on public.job_match_scores;
+create policy "users manage own job match scores"
+on public.job_match_scores for all
+using (
+  public.is_admin() or exists (
+    select 1
+    from public.candidate_profiles cp
+    where cp.id = job_match_scores.candidate_id
+      and cp.user_id = auth.uid()
+  )
+)
+with check (
+  public.is_admin() or exists (
+    select 1
+    from public.candidate_profiles cp
+    where cp.id = job_match_scores.candidate_id
+      and cp.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "users manage own applications" on public.applications;
+create policy "users manage own applications"
+on public.applications for all
 using (auth.uid() = user_id or public.is_admin())
 with check (auth.uid() = user_id or public.is_admin());
 
@@ -892,6 +1112,12 @@ create policy "users create job reports"
 on public.job_reports for insert
 with check (true);
 
+drop policy if exists "users manage own job reports" on public.job_reports;
+create policy "users manage own job reports"
+on public.job_reports for all
+using (auth.uid() = user_id or public.is_admin())
+with check (auth.uid() = user_id or public.is_admin());
+
 drop policy if exists "admins manage job reports" on public.job_reports;
 create policy "admins manage job reports"
 on public.job_reports for all
@@ -970,6 +1196,26 @@ begin
 end
 $$;
 
+drop trigger if exists public_companies_sync_mvp_fields on public.companies;
+create trigger public_companies_sync_mvp_fields
+before insert or update on public.companies
+for each row execute function public.sync_company_mvp_fields();
+
+drop trigger if exists public_jobs_sync_mvp_fields on public.jobs;
+create trigger public_jobs_sync_mvp_fields
+before insert or update on public.jobs
+for each row execute function public.sync_job_mvp_fields();
+
+drop trigger if exists public_applications_sync_user_id on public.applications;
+create trigger public_applications_sync_user_id
+before insert or update on public.applications
+for each row execute function public.sync_application_user_id();
+
+drop trigger if exists public_job_reports_sync_user_id on public.job_reports;
+create trigger public_job_reports_sync_user_id
+before insert or update on public.job_reports
+for each row execute function public.sync_job_report_user_id();
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
@@ -979,3 +1225,51 @@ drop trigger if exists on_auth_user_updated on auth.users;
 create trigger on_auth_user_updated
 after update of email, phone, raw_user_meta_data, raw_app_meta_data on auth.users
 for each row execute function private.sync_auth_user();
+
+grant usage on schema public to anon, authenticated, service_role;
+
+grant select on
+  public.companies,
+  public.jobs,
+  public.government_jobs,
+  public.internships,
+  public.blog_posts,
+  public.seo_pages,
+  public.salary_data,
+  public.company_reviews
+to anon;
+
+grant insert on
+  public.analytics_events,
+  public.job_reports
+to anon;
+
+grant select, insert, update, delete on
+  public.users,
+  public.companies,
+  public.candidate_profiles,
+  public.employer_profiles,
+  public.jobs,
+  public.applications,
+  public.saved_jobs,
+  public.job_match_scores,
+  public.resumes,
+  public.resume_analyses,
+  public.interview_sessions,
+  public.whatsapp_subscriptions,
+  public.government_jobs,
+  public.internships,
+  public.blog_posts,
+  public.seo_pages,
+  public.payments,
+  public.notifications,
+  public.analytics_events,
+  public.job_reports,
+  public.admin_logs,
+  public.company_reviews,
+  public.salary_data
+to authenticated;
+
+grant all privileges on all tables in schema public to service_role;
+
+notify pgrst, 'reload schema';

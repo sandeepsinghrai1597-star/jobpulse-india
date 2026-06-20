@@ -1,5 +1,6 @@
 import { DashboardShell } from "@/components/dashboards/dashboard-shell";
 import { JobCard } from "@/components/jobs/job-card";
+import { getJobInteractionState } from "@/lib/jobs/interactions";
 import { dbRowToJob, type SupabaseJobRow } from "@/lib/jobs/live";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +29,8 @@ export default async function CandidateSavedJobsPage() {
         .map((job) => dbRowToJob(job as unknown as SupabaseJobRow)) ?? [];
   }
 
+  const interactions = await getJobInteractionState(savedJobs.map((job) => job.id));
+
   return (
     <DashboardShell
       role="candidate"
@@ -37,7 +40,13 @@ export default async function CandidateSavedJobsPage() {
       {savedJobs.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-2">
           {savedJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard
+              key={job.id}
+              job={job}
+              isSaved={interactions.stateByJobId.get(job.id)?.isSaved ?? true}
+              isApplied={interactions.stateByJobId.get(job.id)?.isApplied ?? false}
+              isSignedIn={interactions.isSignedIn}
+            />
           ))}
         </div>
       ) : (

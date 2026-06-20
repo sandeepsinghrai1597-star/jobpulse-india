@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { recordAnalyticsEvent } from "@/lib/analytics/server";
 import { analyticsEventSchema } from "@/lib/validation/schemas";
 
 export async function POST(request: Request) {
-  const admin = getSupabaseAdminClient();
-  if (!admin) {
-    return NextResponse.json({ ok: true, mode: "noop" });
-  }
-
   const body = await request.json();
   const parsed = analyticsEventSchema.safeParse(body);
   if (!parsed.success) {
@@ -17,14 +12,18 @@ export async function POST(request: Request) {
 
   const user = await getCurrentUser();
 
-  const { error } = await admin.from("analytics_events").insert({
-    user_id: user?.id ?? null,
-    session_id: parsed.data.sessionId ?? null,
-    event_name: parsed.data.eventName,
-    event_data: parsed.data.eventData,
-  } as never);
+  const result = await recordAnalyticsEvent({
+    userId: user?.id ?? null,
+    candidateId: parsed.data.candidateId ?? null,
+    employerId: parsed.data.employerId ?? null,
+    jobId: parsed.data.jobId ?? null,
+    paymentId: parsed.data.paymentId ?? null,
+    sessionId: parsed.data.sessionId ?? undefined,
+    eventName: parsed.data.eventName,
+    eventData: parsed.data.eventData,
+  });
 
-  if (error) {
+  if (!result.ok) {
     return NextResponse.json({ message: "Analytics event persistence failed." }, { status: 500 });
   }
 

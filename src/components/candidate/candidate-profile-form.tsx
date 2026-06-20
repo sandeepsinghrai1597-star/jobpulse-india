@@ -131,7 +131,7 @@ export function CandidateProfileForm({ initialProfile }: { initialProfile: Candi
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+      <Card className="rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Candidate profile</CardTitle>
         </CardHeader>
@@ -274,7 +274,7 @@ export function CandidateProfileForm({ initialProfile }: { initialProfile: Candi
       </Card>
 
       <div className="space-y-6">
-        <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+        <Card className="rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-4 p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-heading text-2xl font-semibold">Verification</h2>
@@ -293,7 +293,7 @@ export function CandidateProfileForm({ initialProfile }: { initialProfile: Candi
           </CardContent>
         </Card>
 
-        <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+        <Card className="rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-4 p-6">
             <h2 className="font-heading text-2xl font-semibold">Discovery readiness</h2>
             <p className="text-sm leading-6 text-muted-foreground">

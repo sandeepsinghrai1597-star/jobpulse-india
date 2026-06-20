@@ -12,13 +12,13 @@ const footerColumns = [
   },
   {
     title: "Jobs by category",
-    links: ["Remote jobs", "Government jobs", "Internships", "Sales jobs"],
+    links: ["Remote jobs", "Government jobs", "Internships", "Learning roadmap"],
   },
 ];
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-white/10 bg-slate-950/70 backdrop-blur">
+    <footer className="border-t border-slate-200 bg-white">
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.3fr_repeat(3,1fr)] lg:px-8">
         <div className="space-y-4">
           <h3 className="font-heading text-xl font-semibold">{siteConfig.name}</h3>
@@ -28,7 +28,7 @@ export function SiteFooter() {
         </div>
         {footerColumns.map((column) => (
           <div key={column.title} className="space-y-4">
-            <h4 className="text-sm font-semibold text-slate-100">{column.title}</h4>
+            <h4 className="text-sm font-semibold text-slate-950">{column.title}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               {column.links.map((link) => (
                 <li key={link}>{link}</li>
@@ -37,10 +37,11 @@ export function SiteFooter() {
           </div>
         ))}
       </div>
-      <div className="border-t border-white/10">
+      <div className="border-t border-slate-200">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>© 2026 {siteConfig.name}. All rights reserved.</p>
           <div className="flex gap-4">
+            <Link href="/learning-roadmap">Roadmaps</Link>
             <Link href="/about">About</Link>
             <Link href="/contact">Contact</Link>
             <Link href="/privacy-policy">Privacy</Link>

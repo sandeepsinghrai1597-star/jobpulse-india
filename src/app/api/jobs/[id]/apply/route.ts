@@ -1,71 +1,54 @@
 import { NextResponse } from "next/server";
 import { PostgrestError } from "@supabase/supabase-js";
-import { mapCandidateProfileRow } from "@/lib/candidate/profile";
-import { getUnifiedJobByIdentifier, jobToDbRow } from "@/lib/jobs/live";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import { ensurePersistedJobByIdentifier } from "@/lib/jobs/persistence";
 import { createClient } from "@/lib/supabase/server";
 
-const profileSelect = `
-  id,
-  user_id,
-  full_name,
-  phone,
-  headline,
-  bio,
-  education,
-  skills,
-  experience,
-  city,
-  state,
-  preferred_roles,
-  expected_salary,
-  preferred_job_types,
-  language_preference,
-  resume_url,
-  verified,
-  verification_status,
-  verification_requested_at,
-  verified_at,
-  updated_at
-`;
+async function resolveCandidateProfileId(userId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data: existingProfile, error: profileError } = await supabase
+    .from("candidate_profiles")
+    .select("id, resume_url")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-async function resolvePersistedJobId(identifier: string) {
-  const unifiedJob = await getUnifiedJobByIdentifier(identifier);
-  if (!unifiedJob) {
-    return { id: null, job: null, message: "Job not found." };
-  }
-
-  const admin = getSupabaseAdminClient();
-
-  if (!admin) {
+  if (profileError) {
     return {
       id: null,
-      job: unifiedJob,
-      message:
-        "This environment is missing the service role key required to persist discovered jobs.",
+      profileResumeUrl: null,
+      message: "We could not load your candidate profile right now.",
     };
   }
 
-  const result = await admin
-    .from("jobs")
-    .upsert(jobToDbRow(unifiedJob) as never, { onConflict: "slug" })
-    .select("id")
+  if (existingProfile?.id) {
+    return {
+      id: existingProfile.id as string,
+      profileResumeUrl: existingProfile.resume_url ?? null,
+      message: null,
+    };
+  }
+
+  const { data: createdProfile, error: createError } = await supabase
+    .from("candidate_profiles")
+    .insert({ user_id: userId } as never)
+    .select("id, resume_url")
     .single();
-  const data = result.data as { id: string } | null;
-  const error = result.error;
 
-  if (error || !data?.id) {
+  if (createError || !createdProfile?.id) {
     return {
       id: null,
-      job: unifiedJob,
-      message: "We could not prepare this job for verified applications.",
+      profileResumeUrl: null,
+      message: "We could not prepare your candidate profile for this application.",
     };
   }
 
-  return { id: data.id as string, job: unifiedJob, message: null };
+  return {
+    id: createdProfile.id as string,
+    profileResumeUrl: createdProfile.resume_url ?? null,
+    message: null,
+  };
 }
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: identifier } = await params;
   const supabase = await createClient();
 
@@ -75,60 +58,69 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   if (!user) {
     return NextResponse.json(
-      { message: "Please sign in as a candidate to apply." },
+      { message: "Please sign in to apply.", redirectTo: `/login?next=/jobs/${identifier}` },
       { status: 401 },
     );
   }
 
-  const { data: profileRow, error: profileError } = await supabase
-    .from("candidate_profiles")
-    .select(profileSelect)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const formData = await request.formData();
+  const selectedResumeId = String(formData.get("resumeId") ?? "").trim();
+  const uploadedResumeUrl = String(formData.get("uploadedResumeUrl") ?? "").trim();
+  const coverLetter = String(formData.get("coverLetter") ?? "").trim();
 
-  if (profileError) {
+  const candidateProfile = await resolveCandidateProfileId(user.id, supabase);
+  if (!candidateProfile.id) {
     return NextResponse.json(
-      { message: "We could not verify your candidate profile right now." },
+      { message: candidateProfile.message ?? "Could not prepare your profile." },
       { status: 500 },
     );
   }
 
-  const profile = mapCandidateProfileRow(profileRow);
+  let resumeId: string | null = null;
+  let resumeUrl: string | null = null;
 
-  if (!profile.id) {
+  if (selectedResumeId) {
+    const { data: resume, error: resumeError } = await supabase
+      .from("resumes")
+      .select("id, file_url")
+      .eq("id", selectedResumeId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (resumeError || !resume?.id) {
+      return NextResponse.json({ message: "The selected resume was not found." }, { status: 400 });
+    }
+
+    resumeId = resume.id as string;
+    resumeUrl = resume.file_url ?? null;
+  } else if (uploadedResumeUrl) {
+    resumeUrl = uploadedResumeUrl;
+  } else if (candidateProfile.profileResumeUrl) {
+    resumeUrl = candidateProfile.profileResumeUrl;
+  }
+
+  if (!resumeId && !resumeUrl) {
     return NextResponse.json(
-      {
-        message: "Complete your candidate profile before applying.",
-        redirectTo: "/dashboard/profile",
-      },
-      { status: 403 },
+      { message: "Select an uploaded resume or upload a new resume before applying." },
+      { status: 400 },
     );
   }
 
-  if (!profile.verified && profile.verificationStatus !== "verified") {
-    return NextResponse.json(
-      {
-        message: "Only verified candidates can apply. Finish your profile and request verification first.",
-        redirectTo: "/dashboard/profile",
-      },
-      { status: 403 },
-    );
-  }
-
-  const persistedJob = await resolvePersistedJobId(identifier);
+  const persistedJob = await ensurePersistedJobByIdentifier(identifier);
 
   if (!persistedJob.id || !persistedJob.job) {
     return NextResponse.json(
       { message: persistedJob.message ?? "We could not prepare this application." },
-      { status: 503 },
+      { status: 404 },
     );
   }
 
   const { error } = await supabase.from("applications").insert({
     job_id: persistedJob.id,
-    candidate_id: profile.id,
-    resume_url: profile.resumeUrl || null,
-    cover_letter: `Applied via verified candidate flow on ${new Date().toISOString()}.`,
+    candidate_id: candidateProfile.id,
+    resume_id: resumeId,
+    resume_url: resumeUrl,
+    cover_letter: coverLetter || null,
   } as never);
 
   if (error) {
@@ -138,8 +130,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       return NextResponse.json({
         ok: true,
         alreadyApplied: true,
-        applyUrl: persistedJob.job.applicationUrl,
-        message: "You already applied for this job. Opening the source link again is safe if needed.",
+        applied: true,
+        message: "You already applied for this job.",
       });
     }
 
@@ -149,9 +141,22 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     );
   }
 
+  await recordAnalyticsEvent({
+    userId: user.id,
+    candidateId: candidateProfile.id,
+    jobId: persistedJob.id,
+    eventName: "job_application",
+    eventData: {
+      jobIdentifier: identifier,
+      jobSlug: persistedJob.job.slug,
+      sourceType: persistedJob.job.sourceType ?? null,
+      city: persistedJob.job.city,
+    },
+  });
+
   return NextResponse.json({
     ok: true,
-    applyUrl: persistedJob.job.applicationUrl,
-    message: "Application submitted. Continue on the source page if the employer needs extra steps.",
+    applied: true,
+    message: "Application submitted successfully.",
   });
 }

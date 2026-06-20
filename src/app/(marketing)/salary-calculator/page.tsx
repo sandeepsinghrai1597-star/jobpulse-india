@@ -1,5 +1,5 @@
+import { SalaryCalculator } from "@/components/marketing/salary-calculator";
 import { FeaturePage } from "@/components/shared/feature-page";
-import { Card, CardContent } from "@/components/ui/card";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -14,26 +14,19 @@ export default function SalaryCalculatorPage() {
     <FeaturePage
       eyebrow="Salary Calculator"
       title="Estimate role and city-based salary ranges more responsibly"
-      description="The salary calculator combines role, city, experience, education, and skill signals to explain a likely entry-level, average, and high-end salary band."
+      description="Compare expected salary range, entry-level pay, average salary, high salary, market-driving skills, similar roles, and suggested jobs in one flow."
       highlights={[
-        "Entry-level, average, and high salary outputs",
-        "Skills that tend to increase pay",
-        "Related roles for broader targeting",
-        "Clear disclaimer for market variability",
+        "Uses salary_data when matching records are available",
+        "Falls back to AI estimate with a clear disclaimer",
+        "Shows entry-level, average, and high salary views",
+        "Suggests related roles and active jobs to target next",
       ]}
-      ctaHref="/career-agent"
-      ctaLabel="Ask AI salary guidance"
-      secondaryHref="/jobs"
-      secondaryLabel="Browse jobs"
+      ctaHref="/jobs"
+      ctaLabel="Browse jobs"
+      secondaryHref="/career-agent"
+      secondaryLabel="Ask career agent"
     >
-      <Card className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
-        <CardContent className="space-y-4 p-6">
-          <h2 className="font-heading text-2xl font-semibold">Salary estimate disclaimer</h2>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Salary estimates are approximate and may vary by company, city, skill depth, interview performance, and market conditions.
-          </p>
-        </CardContent>
-      </Card>
+      <SalaryCalculator />
     </FeaturePage>
   );
 }

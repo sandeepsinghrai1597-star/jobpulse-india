@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
+import { recordAnalyticsEvent } from "@/lib/analytics/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { getAllowedPaidPlans, getPaidPlanDefinition } from "@/lib/payments/plans";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { paymentRequestSchema } from "@/lib/validation/schemas";
 
@@ -31,10 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const allowedPlans =
-    user.role === "employer"
-      ? ["employer-basic", "employer-pro", "featured-job"]
-      : ["candidate-pro"];
+  const allowedPlans = getAllowedPaidPlans(user.role);
 
   if (!allowedPlans.includes(parsed.data.plan)) {
     return NextResponse.json(
@@ -43,25 +42,21 @@ export async function POST(request: Request) {
     );
   }
 
+  const plan = getPaidPlanDefinition(parsed.data.plan);
+
   const client = getRazorpay();
   const admin = getSupabaseAdminClient();
 
   if (!client || !admin) {
-    return NextResponse.json({
-      mode: "mock",
-      order: {
-        id: "order_mock_123",
-        amount: parsed.data.amount,
-        currency: "INR",
-        receipt: parsed.data.plan,
-      },
-      note: "Razorpay or Supabase admin credentials are not configured.",
-    });
+    return NextResponse.json(
+      { message: "Razorpay and Supabase admin credentials must be configured before accepting payments." },
+      { status: 503 },
+    );
   }
 
   const receipt = `${parsed.data.plan}-${Date.now()}`;
   const order = await client.orders.create({
-    amount: parsed.data.amount * 100,
+    amount: plan.amountInRupees * 100,
     currency: "INR",
     receipt,
     notes: {
@@ -72,9 +67,9 @@ export async function POST(request: Request) {
     },
   });
 
-  const { error } = await admin.from("payments").insert({
+  const { data: paymentRecord, error } = await admin.from("payments").insert({
     user_id: user.id,
-    amount: parsed.data.amount,
+    amount: plan.amountInRupees,
     plan: parsed.data.plan,
     subscription_type: user.role,
     razorpay_order_id: order.id,
@@ -82,9 +77,14 @@ export async function POST(request: Request) {
     notes: {
       receipt,
       role: user.role,
+      plan_name: plan.name,
+      billing_interval: plan.billingInterval,
       ...parsed.data.notes,
     },
-  } as never);
+  } as never)
+  .select("id")
+  .single();
+  const createdPayment = paymentRecord as { id: string } | null;
 
   if (error) {
     return NextResponse.json(
@@ -93,5 +93,30 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ mode: "live", order });
+  await recordAnalyticsEvent({
+    userId: user.id,
+    paymentId: createdPayment?.id ?? null,
+    eventName: "payment_event",
+    eventData: {
+      status: "created",
+      plan: parsed.data.plan,
+      amount: plan.amountInRupees,
+      source: "create_order",
+    },
+  });
+
+  return NextResponse.json({
+    order,
+    keyId: process.env.RAZORPAY_KEY_ID,
+    plan: {
+      id: plan.id,
+      name: plan.name,
+      amountInRupees: plan.amountInRupees,
+    },
+    user: {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+    },
+  });
 }

@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { aiPrompts } from "@/lib/ai/prompts";
 
 let client: GoogleGenAI | null = null;
+const GEMINI_TIMEOUT_MS = 15000;
 
 function getClient() {
   const apiKey =
@@ -29,13 +30,21 @@ export async function generateStructuredAiResponse(
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `${aiPrompts[promptKey]}\n\nInput JSON:\n${JSON.stringify(payload)}`,
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `${aiPrompts[promptKey]}\n\nInput JSON:\n${JSON.stringify(payload)}`,
+        config: {
+          responseMimeType: "application/json",
+        },
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Gemini request timed out.")),
+          GEMINI_TIMEOUT_MS,
+        ),
+      ),
+    ]);
 
     return JSON.parse(response.text ?? "{}");
   } catch (error) {

@@ -1,7 +1,32 @@
+import Link from "next/link";
 import { DashboardShell } from "@/components/dashboards/dashboard-shell";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
 
-export default function CandidateResumesPage() {
+export default async function CandidateResumesPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let resumes: Array<{
+    id: string;
+    title: string;
+    updated_at: string;
+    template_key: string | null;
+  }> = [];
+
+  if (user?.id) {
+    const { data } = await supabase
+      .from("resumes")
+      .select("id, title, template_key, updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+
+    resumes = data ?? [];
+  }
+
   return (
     <DashboardShell
       role="candidate"
@@ -9,8 +34,37 @@ export default function CandidateResumesPage() {
       description="Manage uploaded resumes, created resumes, ATS scores, and export/download actions."
     >
       <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
-        <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
-          Resume storage is modeled for uploaded files, generated files, ATS scores, and template versions.
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle className="text-white">Saved resumes</CardTitle>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Resume builder drafts are stored as structured JSON so you can keep refining and
+              exporting them later.
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/resume-builder">Build resume</Link>
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3 p-6 pt-0">
+          {resumes.length > 0 ? (
+            resumes.map((resume) => (
+              <div
+                key={resume.id}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200"
+              >
+                <p className="font-medium text-white">{resume.title}</p>
+                <p className="mt-1 text-slate-400">
+                  Template: {resume.template_key ?? "fresher"}
+                </p>
+                <p className="mt-1 text-slate-500">Updated {resume.updated_at}</p>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-sm leading-6 text-muted-foreground">
+              No saved resumes yet. Start in the resume builder and your drafts will appear here.
+            </div>
+          )}
         </CardContent>
       </Card>
     </DashboardShell>

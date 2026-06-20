@@ -1,6 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+function getSafeFallbackRole(role: unknown) {
+  if (role === "employer" || role === "candidate") {
+    return role;
+  }
+
+  return "candidate";
+}
+
+function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRole: unknown) {
+  if (appMetadataRole === "admin") {
+    return "admin";
+  }
+
+  if (appMetadataRole === "employer" || appMetadataRole === "candidate") {
+    return appMetadataRole;
+  }
+
+  return getSafeFallbackRole(userMetadataRole);
+}
+
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey =
@@ -65,11 +85,10 @@ export async function updateSession(request: NextRequest) {
 
   const role =
     currentUser?.role ??
-    (user.user_metadata?.role === "admin" ||
-    user.user_metadata?.role === "employer" ||
-    user.user_metadata?.role === "candidate"
-      ? user.user_metadata.role
-      : "candidate");
+    getRoleFromAuthMetadata(
+      user.app_metadata?.role,
+      user.user_metadata?.role,
+    );
 
   if (
     (isCandidateRoute && role !== "candidate") ||
