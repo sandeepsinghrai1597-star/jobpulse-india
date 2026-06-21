@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmployerDashboardData, getEmployerStats } from "@/lib/employer/dashboard";
+import { buildResumeDownloadHref } from "@/lib/resumes/storage";
 
 const pipelineStages = ["applied", "viewed", "shortlisted", "interview", "offered", "rejected"];
 
@@ -199,7 +200,11 @@ export default async function EmployerDashboardPage() {
                         </div>
                         <ApplicantActions
                           applicationId={application.id}
-                          resumeUrl={application.resume_url || candidate?.resume_url}
+                          resumeHref={
+                            application.resume_storage_path || application.resume_id
+                              ? buildResumeDownloadHref({ applicationId: application.id })
+                              : null
+                          }
                         />
                       </div>
                     </div>

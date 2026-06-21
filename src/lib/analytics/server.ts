@@ -1,3 +1,4 @@
+import "server-only";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { AnalyticsEventPayload } from "@/lib/analytics/events";
 
@@ -25,4 +26,3 @@ export async function recordAnalyticsEvent(payload: AnalyticsEventPayload) {
 
   return { ok: true as const };
 }
-

@@ -2,12 +2,15 @@ import Link from "next/link";
 import {
   createJobSourceAction,
   createJobSourceSampleAction,
+  importPunjabSourcePackAction,
   importTrustedSourcePackAction,
   runDueJobSourcesAction,
+  runPunjabJobSourcesAction,
   runJobSourceAction,
   updateJobSourceAction,
   updateJobSourceStatusAction,
 } from "@/app/(admin)/admin/jobs/ingestion-actions";
+import { PUNJAB_SOURCE_PACK } from "@/lib/jobs/punjab-source-pack";
 import { DashboardShell } from "@/components/dashboards/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -188,6 +191,20 @@ export async function AdminJobSourcesPage() {
               </Button>
             </form>
 
+            <form action={importPunjabSourcePackAction}>
+              <input type="hidden" name="returnTo" value="/admin/job-sources" />
+              <Button type="submit" variant="outline" className="rounded-2xl border-slate-200 bg-white">
+                Import Punjab source pack ({PUNJAB_SOURCE_PACK.length})
+              </Button>
+            </form>
+
+            <form action={runPunjabJobSourcesAction}>
+              <input type="hidden" name="returnTo" value="/admin/job-sources" />
+              <Button type="submit" variant="outline" className="rounded-2xl border-slate-200 bg-white">
+                Run Punjab pipeline now
+              </Button>
+            </form>
+
             <form action={runDueJobSourcesAction}>
               <input type="hidden" name="returnTo" value="/admin/job-sources" />
               <Button type="submit" variant="outline" className="rounded-2xl border-slate-200 bg-white">
@@ -240,6 +257,7 @@ export async function AdminJobSourcesPage() {
                             <Badge variant="outline">
                               {JOB_SOURCE_FETCH_METHOD_OPTIONS.find((option) => option.value === source.transport_type)?.label ?? source.transport_type}
                             </Badge>
+                            {config.coverageRegion ? <Badge variant="secondary">{config.coverageRegion}</Badge> : null}
                             {source.allow_auto_fetch ? <Badge>Auto fetch</Badge> : <Badge variant="outline">Manual only</Badge>}
                           </div>
                           <p className="break-all text-sm text-slate-600">{source.source_url}</p>
@@ -254,6 +272,9 @@ export async function AdminJobSourcesPage() {
                             <span>
                               Default location: {[config.defaultCity, config.defaultState].filter(Boolean).join(", ") || "Not set"}
                             </span>
+                            {config.locationKeywords.length > 0 ? (
+                              <span>Scope keywords: {config.locationKeywords.slice(0, 5).join(", ")}{config.locationKeywords.length > 5 ? "..." : ""}</span>
+                            ) : null}
                           </div>
                           {source.notes ? <p className="text-sm text-slate-500">{source.notes}</p> : null}
                         </div>
@@ -463,6 +484,7 @@ export async function AdminJobSourcesPage() {
               <p>4. Duplicate detection runs against both live jobs and previously fetched ingestion items.</p>
               <p>5. Run history preserves jobs found, new jobs, duplicates, and the latest error trail for each source.</p>
               <p>6. The trusted source pack imports official government sites plus trusted company career pages, capped at 100 records.</p>
+              <p>7. The Punjab source pack tags Punjab-specific feeds and applies Punjab location filtering on broad feeds before they enter review.</p>
               <Button asChild variant="outline" className="mt-3 rounded-2xl border-slate-200 bg-white">
                 <Link href="/admin/jobs/fetched">Open fetched queue</Link>
               </Button>

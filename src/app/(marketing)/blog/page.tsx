@@ -41,6 +41,7 @@ export default async function BlogPage({
           eyebrow="Blog"
           title="Career advice built for search and action"
           description="Search by topic, filter by category, and move from content into resumes, jobs, and AI-guided next steps."
+          as="h1"
         />
         <form className="mt-8 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white/80 p-4 md:grid-cols-[1.4fr_0.8fr_auto]">
           <label className="space-y-2">
@@ -104,4 +105,3 @@ export default async function BlogPage({
     </div>
   );
 }
-

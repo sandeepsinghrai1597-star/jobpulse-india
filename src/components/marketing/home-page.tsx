@@ -25,7 +25,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { jobCategories, jobs } from "@/lib/data/site";
+import { jobCategories } from "@/lib/data/site";
 import type { Job } from "@/types";
 import { JobCard } from "@/components/jobs/job-card";
 import { HeroSection } from "@/components/marketing/hero-section";
@@ -85,10 +85,22 @@ const quickSearches = [
   { label: "Internships", href: "/internships", icon: Target },
 ];
 
-export function HomePage({ latestJobs = jobs.slice(0, 4) }: { latestJobs?: Job[] }) {
+interface HomePageStats {
+  activeJobs: number;
+  companies: number;
+  cities: number;
+}
+
+export function HomePage({
+  latestJobs = [],
+  heroStats,
+}: {
+  latestJobs?: Job[];
+  heroStats: HomePageStats;
+}) {
   return (
     <div className="pb-16">
-      <HeroSection />
+      <HeroSection stats={heroStats} />
 
       <section className="w-full bg-slate-50 py-14">
         <div className="px-8 lg:px-12">
@@ -185,9 +197,15 @@ export function HomePage({ latestJobs = jobs.slice(0, 4) }: { latestJobs?: Job[]
             </Link>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
-            {latestJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
+            {latestJobs.length > 0 ? (
+              latestJobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))
+            ) : (
+              <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600 md:col-span-2">
+                No active jobs yet. Check back soon or subscribe for alerts.
+              </div>
+            )}
           </div>
         </div>
       </section>

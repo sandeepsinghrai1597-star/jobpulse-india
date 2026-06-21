@@ -19,20 +19,34 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const relayUrl = process.env.N8N_JOB_ALERTS_WEBHOOK_URL;
+
+  if (!relayUrl) {
+    return NextResponse.json(
+      { message: "WhatsApp relay is not configured for this environment." },
+      { status: 503 },
+    );
+  }
+
   const payload = await request.json();
 
-  if (process.env.N8N_JOB_ALERTS_WEBHOOK_URL) {
-    await fetch(process.env.N8N_JOB_ALERTS_WEBHOOK_URL, {
+  try {
+    await fetch(relayUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
+  } catch {
+    return NextResponse.json(
+      { message: "WhatsApp relay is configured but unavailable right now." },
+      { status: 502 },
+    );
   }
 
   return NextResponse.json({
     ok: true,
-    mode: process.env.N8N_JOB_ALERTS_WEBHOOK_URL ? "relay" : "local",
+    mode: "relay",
   });
 }

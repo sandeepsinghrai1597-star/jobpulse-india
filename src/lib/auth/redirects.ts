@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { getRoleHome } from "@/lib/auth/auth-errors";
 import type { UserRole } from "@/types";
 
 export async function requireUser() {
@@ -28,9 +29,4 @@ export async function requireRole(allowedRoles: UserRole[]) {
 
   return user;
 }
-
-export function getRoleHome(role: UserRole) {
-  if (role === "admin") return "/admin";
-  if (role === "employer") return "/employer";
-  return "/dashboard";
-}
+export { getRoleHome };

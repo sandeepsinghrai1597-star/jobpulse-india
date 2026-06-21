@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { BriefcaseBusiness, LayoutDashboard, LogOut, Menu, Sparkles } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { getRoleHome } from "@/lib/auth/redirects";
+import { BriefcaseBusiness, Menu, Sparkles } from "lucide-react";
 import { siteConfig } from "@/lib/data/site";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export async function SiteHeader() {
-  const user = await getCurrentUser();
+export function SiteHeader() {
   const primaryNav = siteConfig.nav.filter((item) =>
     [
       "/jobs",
@@ -40,40 +37,19 @@ export async function SiteHeader() {
         </Link>
         <nav className="hidden items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 md:flex" aria-label="Primary navigation">
           {primaryNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group relative rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition-colors duration-200 hover:text-[#0284c7] before:absolute before:bottom-0 before:left-0 before:content-[''] before:h-[2px] before:w-full before:origin-left before:scale-x-0 before:rounded-full before:bg-[#0284c7] before:transition-transform before:duration-200 hover:before:scale-x-100"
-              >
-                {item.label}
-              </Link>
-            ))}
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group relative rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition-colors duration-200 hover:text-[#0284c7] before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-full before:origin-left before:scale-x-0 before:rounded-full before:bg-[#0284c7] before:transition-transform before:duration-200 before:content-[''] hover:before:scale-x-100"
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
         <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <Button asChild variant="ghost" className="hidden sm:inline-flex">
-                <Link href={getRoleHome(user.role)}>
-                  <LayoutDashboard className="size-4" />
-                  Dashboard
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                className="hidden sm:inline-flex rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 transition duration-200 hover:bg-[#fef2f2] hover:border-[#f87171] hover:text-[#dc2626]"
-              >
-                <Link href="/auth/logout">
-                  <LogOut className="size-4" />
-                  Logout
-                </Link>
-              </Button>
-            </>
-          ) : (
-            <Button asChild variant="outline" className="hidden border-slate-300 text-slate-800 sm:inline-flex">
-              <Link href="/login">Login</Link>
-            </Button>
-          )}
+          <Button asChild variant="outline" className="hidden border-slate-300 text-slate-800 sm:inline-flex">
+            <Link href="/login">Login</Link>
+          </Button>
           <Button asChild className="hidden rounded-lg shadow-sm sm:inline-flex">
             <Link href="/ai-career-agent">
               <Sparkles className="size-4" />
@@ -108,32 +84,11 @@ export async function SiteHeader() {
                 ))}
               </div>
               <div className="mt-auto space-y-3 border-t border-slate-200 p-4">
-                {user ? (
-                  <>
-                    <SheetClose asChild>
-                      <Button asChild className="w-full">
-                        <Link href={getRoleHome(user.role)}>
-                          <LayoutDashboard className="size-4" />
-                          Dashboard
-                        </Link>
-                      </Button>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Button asChild variant="outline" className="w-full">
-                        <Link href="/auth/logout">
-                          <LogOut className="size-4" />
-                          Logout
-                        </Link>
-                      </Button>
-                    </SheetClose>
-                  </>
-                ) : (
-                  <SheetClose asChild>
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href="/login">Login</Link>
-                    </Button>
-                  </SheetClose>
-                )}
+                <SheetClose asChild>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/login">Login</Link>
+                  </Button>
+                </SheetClose>
                 <SheetClose asChild>
                   <Button asChild className="w-full">
                     <Link href="/ai-career-agent">

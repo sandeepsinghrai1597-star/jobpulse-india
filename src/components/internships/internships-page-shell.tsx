@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { buildInternshipCitySlug } from "@/lib/internships";
 import type { Internship } from "@/types";
 import { SectionHeading } from "@/components/shared/section-heading";
@@ -45,7 +46,7 @@ export function InternshipsPageShell({
         <div className="mt-6 flex flex-wrap gap-2">
           {featuredCities.map((city) => (
             <Badge key={city} variant="secondary" className="rounded-full px-3 py-1">
-              <a href={`/${buildInternshipCitySlug(city)}`}>Internships in {city}</a>
+              <Link href={`/${buildInternshipCitySlug(city)}`}>Internships in {city}</Link>
             </Badge>
           ))}
         </div>

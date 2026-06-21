@@ -1,3 +1,4 @@
+import "server-only";
 import { GoogleGenAI } from "@google/genai";
 import { aiPrompts } from "@/lib/ai/prompts";
 

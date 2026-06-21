@@ -23,7 +23,8 @@ export type EmployerApplicationRow = {
   id: string;
   status: string;
   applied_at: string;
-  resume_url: string | null;
+  resume_id: string | null;
+  resume_storage_path: string | null;
   employer_notes: string | null;
   jobs: {
     id: string;
@@ -38,7 +39,6 @@ export type EmployerApplicationRow = {
     skills: string[] | null;
     experience: string | null;
     education: string | null;
-    resume_url: string | null;
   } | null;
 };
 
@@ -116,7 +116,7 @@ export async function getEmployerDashboardData() {
       .order("updated_at", { ascending: false }),
     admin
       .from("applications")
-      .select("id, status, applied_at, resume_url, employer_notes, jobs!inner(id, title, employer_id), candidate_profiles(full_name, headline, city, state, skills, experience, education, resume_url)")
+      .select("id, status, applied_at, resume_id, resume_storage_path, employer_notes, jobs!inner(id, title, employer_id), candidate_profiles(full_name, headline, city, state, skills, experience, education)")
       .eq("jobs.employer_id", employerProfile.id)
       .order("updated_at", { ascending: false }),
     admin

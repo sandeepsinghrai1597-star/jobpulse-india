@@ -36,7 +36,7 @@ npm install
 2. Copy environment variables:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 3. Start development:
@@ -49,7 +49,7 @@ npm run dev
 
 ## Supabase
 
-- Add your project URL and publishable key to `.env.local`
+- Add your project URL and publishable key to `.env`
 - Run the SQL inside [supabase/migrations/20260615_initial_schema.sql](./supabase/migrations/20260615_initial_schema.sql)
 - Seed starter data with [supabase/seed.sql](./supabase/seed.sql)
 
@@ -60,6 +60,13 @@ npm run dev
 - Set `CRON_SECRET` in Vercel so cron requests are authenticated
 - Configure Vercel Cron for `/api/cron/fetch-jobs` every 6 hours
 - Connect GA4 and Search Console after production domain setup
+
+## Security
+
+- Keep `.env` local only and never commit it.
+- Keep `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DATABASE_PASSWORD`, `RAZORPAY_KEY_SECRET`, and other non-`NEXT_PUBLIC_*` secrets in server-only environment settings.
+- Rotate `SUPABASE_SERVICE_ROLE_KEY`, any exposed publishable/anon Supabase key, and `SUPABASE_DATABASE_PASSWORD` immediately if they were ever committed, shared, or pasted into logs.
+- Review [SECURITY_FIXES.md](./SECURITY_FIXES.md) before the next production deploy.
 
 ## Testing Checklist
 
@@ -76,3 +83,4 @@ npm run dev
 - Supabase and Razorpay clients are initialized lazily to keep builds safe.
 - Set `ENABLE_LIVE_JOB_IMPORT=true` to merge public National Career Service opportunities into the jobs UI and sync API.
 - Third-party aggregator copying is intentionally not implemented; official-source imports are the safe default.
+- The admin source screen now includes a Punjab source pack and a Punjab-only pipeline runner that stages Punjab-matching jobs into review before publishing.

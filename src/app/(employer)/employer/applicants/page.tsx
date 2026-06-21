@@ -4,6 +4,7 @@ import { ApplicantActions } from "@/components/employer/applicant-actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmployerDashboardData } from "@/lib/employer/dashboard";
+import { buildResumeDownloadHref } from "@/lib/resumes/storage";
 
 const stages = ["applied", "viewed", "shortlisted", "interview", "offered", "rejected"];
 
@@ -86,7 +87,11 @@ export default async function EmployerApplicantsPage() {
                     </div>
                     <ApplicantActions
                       applicationId={application.id}
-                      resumeUrl={application.resume_url || candidate?.resume_url}
+                      resumeHref={
+                        application.resume_storage_path || application.resume_id
+                          ? buildResumeDownloadHref({ applicationId: application.id })
+                          : null
+                      }
                     />
                   </div>
                 </div>

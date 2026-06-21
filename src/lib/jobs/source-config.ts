@@ -39,6 +39,8 @@ export type JobSourceConfigShape = {
   industry?: string | null;
   defaultCity?: string | null;
   defaultState?: string | null;
+  coverageRegion?: string | null;
+  locationKeywords?: string[] | string | null;
   allowedDetailDomains?: string[] | string | null;
   fetchFrequencyMinutes?: number;
 };
@@ -79,6 +81,31 @@ function normalizeDomainList(value: unknown) {
         value
           .split(/[\n,|]/)
           .map((entry) => normalizeDomain(entry))
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  return [];
+}
+
+function normalizeStringList(value: unknown) {
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .map((entry) => (typeof entry === "string" ? entry.trim().toLowerCase() : ""))
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  if (typeof value === "string") {
+    return Array.from(
+      new Set(
+        value
+          .split(/[\n,|]/)
+          .map((entry) => entry.trim().toLowerCase())
           .filter(Boolean),
       ),
     );
@@ -183,6 +210,8 @@ export function parseJobSourceConfig(input: {
     industry: normalizeString(config.industry),
     defaultCity: normalizeString(config.defaultCity),
     defaultState: normalizeString(config.defaultState),
+    coverageRegion: normalizeString(config.coverageRegion),
+    locationKeywords: normalizeStringList(config.locationKeywords),
     allowedDetailDomains: normalizeDomainList(config.allowedDetailDomains),
     fetchFrequencyMinutes,
   };
@@ -195,6 +224,20 @@ export function buildJobSourceConfig(input: JobSourceConfigShape) {
     industry: input.industry?.trim() || null,
     defaultCity: input.defaultCity?.trim() || null,
     defaultState: input.defaultState?.trim() || null,
+    coverageRegion: input.coverageRegion?.trim() || null,
+    locationKeywords:
+      Array.isArray(input.locationKeywords)
+        ? Array.from(new Set(input.locationKeywords.map((keyword) => keyword.trim()).filter(Boolean)))
+        : typeof input.locationKeywords === "string"
+          ? Array.from(
+              new Set(
+                input.locationKeywords
+                  .split(/[\n,|]/)
+                  .map((keyword) => keyword.trim())
+                  .filter(Boolean),
+              ),
+            )
+          : [],
     allowedDetailDomains: normalizeDomainList(input.allowedDetailDomains),
     fetchFrequencyMinutes:
       typeof input.fetchFrequencyMinutes === "number" && Number.isFinite(input.fetchFrequencyMinutes)

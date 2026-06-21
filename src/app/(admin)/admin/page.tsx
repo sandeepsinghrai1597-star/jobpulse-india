@@ -52,6 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { buildResumeDownloadHref } from "@/lib/resumes/storage";
 
 const sectionConfig: Array<{
   id: AdminSection;
@@ -433,6 +434,11 @@ export default async function AdminDashboardPage({
           <Button asChild className="rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
             <Link href={`/admin/run-due-job-sources?returnTo=${encodeURIComponent(returnTo)}`}>
               Fetch Due Job Sources
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white">
+            <Link href={`/admin/expire-stale-jobs?returnTo=${encodeURIComponent(returnTo)}`}>
+              Expire Stale Jobs
             </Link>
           </Button>
           <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white">
@@ -913,6 +919,7 @@ export default async function AdminDashboardPage({
               { value: "approved", label: "Approved" },
               { value: "rejected", label: "Rejected" },
               { value: "active", label: "Active" },
+              { value: "expired", label: "Expired" },
               { value: "featured", label: "Featured" },
             ]}
           />
@@ -1044,8 +1051,13 @@ export default async function AdminDashboardPage({
                       </TableCell>
                       <TableCell>{formatDate(application.applied_at)}</TableCell>
                       <TableCell>
-                        {application.resume_url ? (
-                          <a className="text-sky-700 underline-offset-4 hover:underline" href={application.resume_url} target="_blank" rel="noreferrer">
+                        {application.resume_storage_path || application.resume_id ? (
+                          <a
+                            className="text-sky-700 underline-offset-4 hover:underline"
+                            href={buildResumeDownloadHref({ applicationId: application.id })}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             Open resume
                           </a>
                         ) : (

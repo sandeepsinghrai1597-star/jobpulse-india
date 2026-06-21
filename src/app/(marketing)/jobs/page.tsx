@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, Search, Sparkles } from "lucide-react";
-import { JobCard } from "@/components/jobs/job-card";
 import { JobsFilterDrawer } from "@/components/jobs/jobs-filter-drawer";
+import { JobPersonalizationProvider } from "@/components/jobs/job-personalization-context";
+import { PersonalizedJobCardList } from "@/components/jobs/personalized-job-card-list";
 import { SchemaScript } from "@/components/shared/schema-script";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getJobInteractionState } from "@/lib/jobs/interactions";
-import { getCachedOrComputeJobMatches } from "@/lib/candidate/job-match";
-import { mapCandidateProfileRow } from "@/lib/candidate/profile";
 import {
   buildCollectionPageSchema,
   buildMetadata,
@@ -21,7 +19,6 @@ import {
   type PublicJobsFacets,
   type PublicJobsQuery,
 } from "@/lib/jobs/public-search";
-import { createClient } from "@/lib/supabase/server";
 
 export const metadata = buildMetadata({
   title: "Latest Jobs in India - Freshers, Remote, Private & Government Jobs",
@@ -41,10 +38,7 @@ export const metadata = buildMetadata({
   ],
 });
 
-export const dynamic = "force-dynamic";
-
-const candidateProfileSelect =
-  "id, user_id, full_name, phone, headline, bio, education, skills, experience, city, state, preferred_roles, expected_salary, preferred_job_types, language_preference, resume_url, verified, verification_status, verification_requested_at, verified_at, updated_at";
+export const revalidate = 300;
 
 const salaryOptions = [
   { value: "", label: "Any salary" },
@@ -348,29 +342,11 @@ export default async function JobsPage({
 }) {
   const params = await searchParams;
   const query = parsePublicJobsQuery(params);
-  const { results, total, page, totalPages, facets, relatedSearches, allResults } =
+  const { results, total, page, totalPages, facets, relatedSearches, activeCount } =
     await searchPublicJobs(query);
-  const interactions = await getJobInteractionState(results.map((job) => job.id));
   const badges = activeFilterBadges(query);
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const candidateProfileResult = user
-    ? await supabase
-        .from("candidate_profiles")
-        .select(candidateProfileSelect)
-        .eq("user_id", user.id)
-        .maybeSingle()
-    : null;
-  const candidateProfile = candidateProfileResult
-    ? mapCandidateProfileRow(candidateProfileResult.data)
-    : null;
-  const matchSummaries = await getCachedOrComputeJobMatches({
-    supabase,
-    profile: candidateProfile,
-    jobs: results,
-  });
+  const hasActiveJobs = activeCount > 0;
+  const hasFilters = badges.length > 0;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -412,16 +388,20 @@ export default async function JobsPage({
               <CardContent className="grid gap-4 p-6 text-sm text-slate-700 sm:grid-cols-3 lg:grid-cols-1">
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Active jobs</p>
-                  <p className="mt-2 text-3xl font-semibold text-slate-950">{total}</p>
+                  <p className="mt-2 text-3xl font-semibold text-slate-950">{activeCount}</p>
                 </div>
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Live filters</p>
                   <p className="mt-2 text-3xl font-semibold text-slate-950">{badges.length}</p>
                 </div>
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Popular skills</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {hasActiveJobs ? "Popular skills" : "Inventory status"}
+                  </p>
                   <p className="mt-2 text-lg font-semibold text-slate-950">
-                    {facets.skills.slice(0, 2).map((skill) => skill.label).join(" • ") || "Curated daily"}
+                    {hasActiveJobs
+                      ? facets.skills.slice(0, 2).map((skill) => skill.label).join(", ")
+                      : "No active jobs yet"}
                   </p>
                 </div>
               </CardContent>
@@ -499,9 +479,7 @@ export default async function JobsPage({
                 <BriefcaseBusiness className="size-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-950">
-                  {total} active jobs
-                </p>
+                <p className="text-sm font-semibold text-slate-950">{hasActiveJobs ? `${total} active jobs` : "No active jobs"}</p>
                 <p className="text-sm text-slate-500">
                   Page {page} of {totalPages}
                 </p>
@@ -544,34 +522,31 @@ export default async function JobsPage({
                 <div className="flex size-14 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <Search className="size-6" />
                 </div>
-                <h2 className="mt-5 text-2xl font-semibold text-slate-950">No active jobs match these filters</h2>
+                <h2 className="mt-5 text-2xl font-semibold text-slate-950">
+                  {hasActiveJobs ? "No active jobs match these filters" : "No active jobs yet"}
+                </h2>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                  Try removing a few filters, broadening the keyword, or switching to a nearby city or state.
+                  {hasActiveJobs
+                    ? "Try removing a few filters, broadening the keyword, or switching to a nearby city or state."
+                    : "No active jobs yet. Check back soon or subscribe for alerts."}
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
-                  <Button asChild className="rounded-full">
-                    <Link href="/jobs">Clear filters</Link>
-                  </Button>
+                  {hasActiveJobs && hasFilters ? (
+                    <Button asChild className="rounded-full">
+                      <Link href="/jobs">Clear filters</Link>
+                    </Button>
+                  ) : null}
                   <Button asChild variant="outline" className="rounded-full">
-                    <Link href="/jobs?sort=latest">Browse latest jobs</Link>
+                    <Link href="/jobs?sort=latest">{hasActiveJobs ? "Browse latest jobs" : "Refresh jobs page"}</Link>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-5">
-              <div className="grid gap-5">
-                {results.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    matchSummary={matchSummaries.get(job.id) ?? null}
-                    isSaved={interactions.stateByJobId.get(job.id)?.isSaved ?? false}
-                    isApplied={interactions.stateByJobId.get(job.id)?.isApplied ?? false}
-                    isSignedIn={interactions.isSignedIn}
-                  />
-                ))}
-              </div>
+              <JobPersonalizationProvider jobIds={results.map((job) => job.id)}>
+                <PersonalizedJobCardList jobs={results} />
+              </JobPersonalizationProvider>
 
               <div className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-500">
@@ -605,6 +580,9 @@ export default async function JobsPage({
                   </Link>
                 </Button>
               ))}
+              {!hasActiveJobs ? (
+                <p className="text-sm text-slate-500">Related searches will appear here once active jobs are available.</p>
+              ) : null}
             </div>
           </CardContent>
         </Card>
@@ -615,10 +593,14 @@ export default async function JobsPage({
             <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
               <p>Search fields cover keyword, city, and state so candidates can mix role intent with local discovery.</p>
               <p>Filters cover salary, experience, education, job type, work mode, industry, skills, posted date, verified, featured, remote, and fresher.</p>
-              <p>
-                Sorting supports latest, salary high to low, deadline soon, and featured first across{" "}
-                <span className="font-semibold text-slate-900">{allResults.length}</span> filtered active jobs.
-              </p>
+              {hasActiveJobs ? (
+                <p>
+                  Sorting supports latest, salary high to low, deadline soon, and featured first across{" "}
+                  <span className="font-semibold text-slate-900">{total}</span> filtered active jobs.
+                </p>
+              ) : (
+                <p>This page will show coverage details after the first active jobs are published.</p>
+              )}
             </div>
           </CardContent>
         </Card>

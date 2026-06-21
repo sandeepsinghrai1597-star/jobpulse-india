@@ -127,7 +127,7 @@ describe("salary calculator", () => {
     expect(result.source).toBe("salary_data");
     expect(result.matchedSalaryRecords).toBe(2);
     expect(result.disclaimer).toBe(SALARY_DISCLAIMER);
-    expect(result.expectedSalaryRange).toContain("INR");
+    expect(result.expectedSalaryRange).toContain("₹");
     expect(result.suggestedJobs.length).toBeGreaterThan(0);
   });
 

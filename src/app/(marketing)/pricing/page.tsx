@@ -15,6 +15,11 @@ export default async function PricingPage() {
   const user = await getCurrentUser();
   const candidatePlans = getPublicPlansForAudience("candidate");
   const employerPlans = getPublicPlansForAudience("employer");
+  const paymentsEnabled = Boolean(
+    process.env.RAZORPAY_KEY_ID &&
+      process.env.RAZORPAY_KEY_SECRET &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -22,6 +27,7 @@ export default async function PricingPage() {
         eyebrow="Pricing"
         title="Pricing that mirrors how candidates and employers actually grow"
         description="Choose a lightweight free tier or unlock paid workflows for resume optimization, interviews, hiring reach, and analytics."
+        as="h1"
       />
       <div className="mt-8">
         <PricingPlans
@@ -29,6 +35,7 @@ export default async function PricingPage() {
           employerPlans={employerPlans}
           currentRole={user?.role ?? null}
           currentPlan={user?.currentPlan ?? null}
+          paymentsEnabled={paymentsEnabled}
         />
       </div>
     </div>

@@ -1,0 +1,55 @@
+"use client";
+
+import { ReportJobButton } from "@/components/jobs/report-job-button";
+import { SaveJobButton } from "@/components/jobs/save-job-button";
+import { VerifiedApplyPanel } from "@/components/jobs/verified-apply-panel";
+import { Button } from "@/components/ui/button";
+import { useJobPersonalization } from "@/components/jobs/job-personalization-context";
+import { Share2 } from "lucide-react";
+
+export function PersonalizedJobActions({
+  jobId,
+  jobSlug,
+  whatsappShareUrl,
+}: {
+  jobId: string;
+  jobSlug: string;
+  whatsappShareUrl: string;
+}) {
+  const { isLoading, isSignedIn, resumeOptions, stateByJobId } = useJobPersonalization();
+  const interactionState = stateByJobId[jobId];
+
+  return (
+    <>
+      <div id="job-apply-panel" className="flex flex-wrap gap-3">
+        <VerifiedApplyPanel
+          jobIdentifier={jobSlug}
+          jobSlug={jobSlug}
+          isSignedIn={isSignedIn}
+          isInitiallyApplied={interactionState?.isApplied ?? false}
+          resumeOptions={resumeOptions}
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <SaveJobButton
+          jobIdentifier={jobSlug}
+          isInitiallySaved={interactionState?.isSaved ?? false}
+          isSignedIn={isSignedIn}
+          loginRedirectTo={`/login?next=/jobs/${jobSlug}`}
+        />
+        <ReportJobButton jobIdentifier={jobSlug} />
+        <Button asChild variant="secondary" className="rounded-full">
+          <a href={whatsappShareUrl} rel="nofollow noopener noreferrer" target="_blank">
+            <Share2 className="size-4" />
+            Share on WhatsApp
+          </a>
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-slate-500">Loading your saved jobs and application state...</p>
+      ) : null}
+    </>
+  );
+}

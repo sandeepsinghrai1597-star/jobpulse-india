@@ -17,6 +17,7 @@ const SUPPORTED_TRANSPORTS = new Set<SupportedTransportType>([
 ]);
 
 const robotsCache = new Map<string, string | null>();
+const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
 
 function normalizeHost(host: string) {
   return host.trim().toLowerCase().replace(/^www\./, "");
@@ -233,15 +234,41 @@ export async function fetchUrlPayload(
       }
     }
 
-    const response = await fetch(url, {
-      method: "GET",
-      signal: controller.signal,
-      cache: "no-store",
-      headers: {
-        "User-Agent": DEFAULT_USER_AGENT,
-        Accept: options?.accept ?? "application/json, text/xml, application/xml, text/csv, text/html;q=0.9",
-      },
-    });
+    const fetchWithRedirects = async (inputUrl: string, redirectBudget = 5): Promise<Response> => {
+      let currentUrl = inputUrl;
+      let remainingRedirects = redirectBudget;
+
+      while (true) {
+        const response = await fetch(currentUrl, {
+          method: "GET",
+          signal: controller.signal,
+          cache: "no-store",
+          redirect: "manual",
+          headers: {
+            "User-Agent": DEFAULT_USER_AGENT,
+            Accept: options?.accept ?? "application/json, text/xml, application/xml, text/csv, text/html;q=0.9",
+          },
+        });
+
+        if (!REDIRECT_STATUS_CODES.has(response.status)) {
+          return response;
+        }
+
+        const location = response.headers.get("location");
+        if (!location) {
+          throw new FetcherError("NETWORK_FAILURE", `Redirect response from ${currentUrl} did not include a location header.`);
+        }
+
+        if (remainingRedirects <= 0) {
+          throw new FetcherError("NETWORK_FAILURE", `Too many redirects while fetching ${inputUrl}.`);
+        }
+
+        currentUrl = new URL(location, currentUrl).toString();
+        remainingRedirects -= 1;
+      }
+    };
+
+    const response = await fetchWithRedirects(url);
 
     if (!response.ok) {
       throw new FetcherError("NETWORK_FAILURE", `Fetch failed with status ${response.status}.`);
@@ -268,14 +295,62 @@ export async function fetchUrlPayload(
   }
 }
 
+function buildGovernmentFallbackUrls(source: JobSourceRecord) {
+  const candidates: string[] = [];
+
+  try {
+    const parsed = new URL(source.source_url);
+    candidates.push(parsed.toString());
+
+    if (parsed.pathname !== "/") {
+      candidates.push(`${parsed.origin}/`);
+    }
+
+    if (parsed.hostname.startsWith("www.")) {
+      const withoutWww = new URL(parsed.toString());
+      withoutWww.hostname = parsed.hostname.replace(/^www\./, "");
+      candidates.push(withoutWww.toString());
+      candidates.push(`${withoutWww.origin}/`);
+    } else {
+      const withWww = new URL(parsed.toString());
+      withWww.hostname = `www.${parsed.hostname}`;
+      candidates.push(withWww.toString());
+      candidates.push(`${withWww.origin}/`);
+    }
+  } catch {
+    return [source.source_url];
+  }
+
+  return Array.from(new Set(candidates));
+}
+
 export async function fetchSourcePayload(
   source: JobSourceRecord,
   timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
 ): Promise<SourcePayload> {
   validateJobSource(source);
 
-  return fetchUrlPayload(source.source_url, {
-    timeoutMs,
-    respectRobots: true,
-  });
+  const candidates =
+    String(source.transport_type ?? "").toLowerCase() === "government"
+      ? buildGovernmentFallbackUrls(source)
+      : [source.source_url];
+
+  let lastError: unknown = null;
+
+  for (const candidate of candidates) {
+    try {
+      return await fetchUrlPayload(candidate, {
+        timeoutMs,
+        respectRobots: true,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError instanceof FetcherError) {
+    throw lastError;
+  }
+
+  throw new FetcherError("NETWORK_FAILURE", `Unable to fetch source ${source.name}.`, lastError);
 }

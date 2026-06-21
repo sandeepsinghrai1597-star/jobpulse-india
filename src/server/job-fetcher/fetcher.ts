@@ -1,6 +1,7 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { enrichNormalizedJob } from "@/server/job-fetcher/ai-enrichment";
 import { findExistingRawDuplicate, generateContentHash } from "@/server/job-fetcher/dedupe";
+import { filterJobsForSourceLocationScope } from "@/server/job-fetcher/location-filter";
 import { normalizeRawJob } from "@/server/job-fetcher/normalizer";
 import { extractRawJobsFromPayload } from "@/server/job-fetcher/parsers";
 import { fetchSourcePayload, validateJobSource } from "@/server/job-fetcher/source-runner";
@@ -204,17 +205,29 @@ export async function runJobFetchForSource(
     });
 
     const extractedJobs = await extractRawJobsFromPayload(source, payload);
+    const scopedJobs = filterJobsForSourceLocationScope(source, extractedJobs);
     const maxJobsPerSource =
       typeof options?.maxJobsPerSource === "number" && options.maxJobsPerSource > 0
         ? Math.trunc(options.maxJobsPerSource)
-        : extractedJobs.length;
-    const limitedJobs = extractedJobs.slice(0, maxJobsPerSource);
+        : scopedJobs.length;
+    const limitedJobs = scopedJobs.slice(0, maxJobsPerSource);
     counters.totalFound = limitedJobs.length;
-    logBatch(batchId, source, "jobs_extracted", { totalFound: counters.totalFound });
+    logBatch(batchId, source, "jobs_extracted", {
+      totalExtracted: extractedJobs.length,
+      totalMatchedScope: scopedJobs.length,
+      totalFound: counters.totalFound,
+    });
 
-    if (extractedJobs.length > limitedJobs.length) {
+    if (scopedJobs.length === 0) {
+      throw new FetcherError(
+        "EMPTY_RESULT",
+        `No jobs matched the configured location scope for source ${source.name}.`,
+      );
+    }
+
+    if (scopedJobs.length > limitedJobs.length) {
       logBatch(batchId, source, "jobs_limited", {
-        extractedCount: extractedJobs.length,
+        extractedCount: scopedJobs.length,
         processedCount: limitedJobs.length,
         maxJobsPerSource,
       });

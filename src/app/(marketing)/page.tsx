@@ -10,10 +10,16 @@ export const metadata = buildMetadata({
   path: "/",
 });
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function HomeRoute() {
-  const latestJobs = (await getUnifiedJobs()).slice(0, 4);
+  const jobs = await getUnifiedJobs();
+  const latestJobs = jobs.slice(0, 4);
+  const heroStats = {
+    activeJobs: jobs.length,
+    companies: new Set(jobs.map((job) => job.companyName.trim()).filter(Boolean)).size,
+    cities: new Set(jobs.map((job) => job.city.trim()).filter(Boolean)).size,
+  };
 
   return (
     <>
@@ -27,7 +33,7 @@ export default async function HomeRoute() {
             "India's AI Career Companion for Jobs, Resumes & Interviews.",
         }}
       />
-      <HomePage latestJobs={latestJobs} />
+      <HomePage latestJobs={latestJobs} heroStats={heroStats} />
     </>
   );
 }

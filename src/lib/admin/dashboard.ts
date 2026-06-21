@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { syncExpiredJobs } from "@/server/jobs/expiration";
 
 export type AdminSection =
   | "users"
@@ -169,6 +170,8 @@ export type AdminApplicationRow = {
   status: string;
   applied_at: string;
   updated_at: string;
+  resume_id: string | null;
+  resume_storage_path: string | null;
   resume_url: string | null;
   employer_notes: string | null;
   job_title?: string | null;
@@ -572,6 +575,8 @@ export async function getCompaniesPage(state: AdminQueryState) {
 }
 
 export async function getJobsPage(state: AdminQueryState) {
+  await syncExpiredJobs();
+
   const client = await getDataClient();
   const { from, to } = getRange(state.page);
   let query = client
@@ -632,6 +637,8 @@ export async function getJobsReviewPage(input: {
   q?: string;
   page?: number;
 }) {
+  await syncExpiredJobs();
+
   const client = await getDataClient();
   const page = input.page && input.page > 0 ? input.page : 1;
   const { from, to } = getRange(page);
@@ -685,6 +692,8 @@ export async function getJobsReviewPage(input: {
 }
 
 export const getJobsReviewCounts = cache(async (): Promise<AdminJobReviewCounts> => {
+  await syncExpiredJobs();
+
   const client = await getDataClient();
 
   const [pending, active, rejected, flagged, expired] = await Promise.all([
@@ -722,7 +731,7 @@ export async function getApplicationsPage(state: AdminQueryState) {
   let query = client
     .from("applications")
     .select(
-      "id, status, applied_at, updated_at, resume_url, employer_notes, jobs!applications_job_id_fkey(title, company_name), candidate_profiles!applications_candidate_id_fkey(full_name, city, state)",
+      "id, status, applied_at, updated_at, resume_id, resume_storage_path, resume_url, employer_notes, jobs!applications_job_id_fkey(title, company_name), candidate_profiles!applications_candidate_id_fkey(full_name, city, state)",
       { count: "exact" },
     )
     .order("applied_at", { ascending: false });
@@ -750,6 +759,8 @@ export async function getApplicationsPage(state: AdminQueryState) {
       status: String(row.status),
       applied_at: String(row.applied_at),
       updated_at: String(row.updated_at),
+      resume_id: (row.resume_id as string | null) ?? null,
+      resume_storage_path: (row.resume_storage_path as string | null) ?? null,
       resume_url: (row.resume_url as string | null) ?? null,
       employer_notes: (row.employer_notes as string | null) ?? null,
       job_title: job?.title ?? null,

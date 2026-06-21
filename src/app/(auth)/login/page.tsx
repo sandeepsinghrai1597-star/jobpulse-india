@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { mapAuthError } from "@/lib/auth/auth-errors";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getRoleHome } from "@/lib/auth/redirects";
 import { buildMetadata } from "@/lib/seo";
@@ -26,6 +27,10 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const nextPath = getSafeNextPath(params.next);
+  const authError =
+    typeof params.authError === "string" && params.authError.length > 0
+      ? mapAuthError(params.authError)
+      : null;
   const user = await getCurrentUser();
 
   if (user) {
@@ -37,7 +42,10 @@ export default async function LoginPage({
       title="Login to JobPulse India"
       description="Secure Supabase Auth login for candidates, employers, and admins."
     >
-      <LoginForm redirectTo={nextPath} />
+      <LoginForm
+        initialError={authError}
+        redirectTo={nextPath}
+      />
     </AuthShell>
   );
 }

@@ -104,7 +104,9 @@ export function EmployerProfileForm({ initialProfile }: { initialProfile: Employ
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         <p className="font-semibold text-slate-900">Trust signals</p>
         <p className="mt-2">Company email verification is recorded from your work email domain.</p>
-        <p className="mt-1">Domain verification is a placeholder for a future DNS-based proof flow.</p>
+        <p className="mt-1">
+          Domain verification is not live yet, so recruiters should not rely on it as an active trust badge in production.
+        </p>
       </div>
 
       {error ? (

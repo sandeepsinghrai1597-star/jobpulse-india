@@ -83,6 +83,10 @@ export async function PUT(request: Request) {
     .select(profileSelect)
     .eq("user_id", user.id)
     .maybeSingle();
+  const { count: resumeCount } = await supabase
+    .from("resumes")
+    .select("id", { head: true, count: "exact" })
+    .eq("user_id", user.id);
 
   const existing = mapCandidateProfileRow(existingProfile);
   const nextProfile = {
@@ -90,7 +94,9 @@ export async function PUT(request: Request) {
     ...parsed.data,
   };
 
-  const wantsVerification = parsed.data.requestVerification && canRequestVerification(nextProfile);
+  const wantsVerification =
+    parsed.data.requestVerification &&
+    canRequestVerification(nextProfile, { hasResumeOnFile: (resumeCount ?? 0) > 0 });
   const existingStatus = existing.verificationStatus;
 
   const verificationStatus = existing.verified

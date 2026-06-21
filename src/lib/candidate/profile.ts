@@ -85,7 +85,14 @@ export function parseListInput(value: string) {
     .filter(Boolean);
 }
 
-export function canRequestVerification(profile: CandidateProfile) {
+function hasResumeEvidence(profile: CandidateProfile, hasResumeOnFile = false) {
+  return Boolean(profile.resumeUrl || hasResumeOnFile);
+}
+
+export function canRequestVerification(
+  profile: CandidateProfile,
+  options?: { hasResumeOnFile?: boolean },
+) {
   return Boolean(
     profile.fullName &&
       profile.phone &&
@@ -93,13 +100,16 @@ export function canRequestVerification(profile: CandidateProfile) {
       profile.city &&
       profile.state &&
       profile.experience &&
-      profile.resumeUrl &&
+      hasResumeEvidence(profile, options?.hasResumeOnFile) &&
       profile.skills.length > 0 &&
       profile.preferredRoles.length > 0,
   );
 }
 
-export function calculateProfileCompletion(profile: CandidateProfile) {
+export function calculateProfileCompletion(
+  profile: CandidateProfile,
+  options?: { hasResumeOnFile?: boolean },
+) {
   const checks = [
     profile.fullName,
     profile.phone,
@@ -109,7 +119,7 @@ export function calculateProfileCompletion(profile: CandidateProfile) {
     profile.experience,
     profile.city,
     profile.state,
-    profile.resumeUrl,
+    hasResumeEvidence(profile, options?.hasResumeOnFile) ? "resume" : "",
     profile.skills.length > 0 ? "skills" : "",
     profile.preferredRoles.length > 0 ? "roles" : "",
     profile.preferredJobTypes.length > 0 ? "jobTypes" : "",

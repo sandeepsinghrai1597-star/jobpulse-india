@@ -29,6 +29,7 @@ import {
 } from "@/lib/candidate/profile";
 import { searchUnifiedJobs } from "@/lib/jobs/search";
 import { buildMetadata } from "@/lib/seo";
+import { buildResumeDownloadHref } from "@/lib/resumes/storage";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import type { Job } from "@/types";
@@ -134,7 +135,7 @@ type ApplicationRow = {
 type ResumeRow = {
   id: string;
   title: string;
-  file_url: string | null;
+  storage_path: string | null;
   ats_score: number | null;
   updated_at: string;
 };
@@ -332,7 +333,7 @@ export default async function CandidateDashboardPage() {
         .limit(3),
       supabase
         .from("resumes")
-        .select("id, title, file_url, ats_score, updated_at")
+        .select("id, title, storage_path, ats_score, updated_at")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
         .limit(3),
@@ -578,6 +579,18 @@ export default async function CandidateDashboardPage() {
                     </Badge>
                   </div>
                 </div>
+                {resumes[0]?.storage_path ? (
+                  <Button asChild variant="outline" className="w-full rounded-xl">
+                    <a
+                      href={buildResumeDownloadHref({ resumeId: resumes[0].id })}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <FileText className="size-4" />
+                      Download latest resume
+                    </a>
+                  </Button>
+                ) : null}
                 <Button asChild className="w-full rounded-xl">
                   <Link href="/resume-analyzer">
                     <Sparkles className="size-4" />

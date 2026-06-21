@@ -7,7 +7,7 @@ async function getResumeSummaries(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("resumes")
-    .select("id, title, template_key, file_url, updated_at")
+    .select("id, title, template_key, storage_path, updated_at")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -19,7 +19,7 @@ async function getResumeSummaries(userId: string) {
     id: item.id,
     title: item.title,
     templateKey: item.template_key ?? "fresher",
-    fileUrl: item.file_url ?? null,
+    hasFile: Boolean(item.storage_path),
     updatedAt: item.updated_at,
   }));
 }

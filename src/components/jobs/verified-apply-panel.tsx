@@ -27,7 +27,6 @@ import { Textarea } from "@/components/ui/textarea";
 interface ResumeOption {
   id: string;
   title: string;
-  fileUrl: string | null;
   updatedAt: string;
 }
 
@@ -54,10 +53,9 @@ export function VerifiedApplyPanel({
   const [selectedResumeId, setSelectedResumeId] = useState<string>(
     resumeOptions[0]?.id ?? "upload-new",
   );
-  const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string>("");
+  const [uploadedResumeId, setUploadedResumeId] = useState<string>("");
   const [uploadedResumeLabel, setUploadedResumeLabel] = useState<string>("");
   const [coverLetter, setCoverLetter] = useState("");
-  const selectedResume = resumeOptions.find((resume) => resume.id === selectedResumeId) ?? null;
 
   const needsUpload = selectedResumeId === "upload-new";
   const loginRedirectTo = `/login?next=/jobs/${jobSlug}`;
@@ -67,11 +65,11 @@ export function VerifiedApplyPanel({
     }
 
     if (needsUpload) {
-      return Boolean(uploadedResumeUrl);
+      return Boolean(uploadedResumeId);
     }
 
     return Boolean(selectedResumeId);
-  }, [isApplied, isApplying, isUploadingResume, needsUpload, selectedResumeId, uploadedResumeUrl]);
+  }, [isApplied, isApplying, isUploadingResume, needsUpload, selectedResumeId, uploadedResumeId]);
 
   async function handleResumeUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -91,18 +89,18 @@ export function VerifiedApplyPanel({
 
     const result = (await response.json()) as {
       message?: string;
-      uploadedResumeUrl?: string;
       resume?: { id: string; title: string };
     };
 
-    if (!response.ok || !result.uploadedResumeUrl) {
+    if (!response.ok || !result.resume?.id) {
       setError(result.message ?? "We could not upload this resume.");
       setIsUploadingResume(false);
       return;
     }
 
-    setUploadedResumeUrl(result.uploadedResumeUrl);
+    setUploadedResumeId(result.resume.id);
     setUploadedResumeLabel(result.resume?.title ?? file.name);
+    setSelectedResumeId("upload-new");
     setMessage("Resume uploaded. You can submit the application now.");
     setIsUploadingResume(false);
   }
@@ -118,19 +116,11 @@ export function VerifiedApplyPanel({
     setMessage(null);
 
     const formData = new FormData();
-    if (!needsUpload && selectedResumeId.startsWith("resume:")) {
+    if (!needsUpload && selectedResumeId) {
       formData.append("resumeId", selectedResumeId.replace(/^resume:/, ""));
     }
-    if (!needsUpload && selectedResume?.fileUrl && !selectedResumeId.startsWith("resume:")) {
-      formData.append("uploadedResumeUrl", selectedResume.fileUrl);
-    }
-    if (!needsUpload && !selectedResume?.fileUrl && !selectedResumeId.startsWith("resume:")) {
-      setError("The selected resume is missing a file. Please upload a new resume.");
-      setIsApplying(false);
-      return;
-    }
-    if (needsUpload && uploadedResumeUrl) {
-      formData.append("uploadedResumeUrl", uploadedResumeUrl);
+    if (needsUpload && uploadedResumeId) {
+      formData.append("resumeId", uploadedResumeId);
     }
     if (coverLetter.trim()) {
       formData.append("coverLetter", coverLetter.trim());

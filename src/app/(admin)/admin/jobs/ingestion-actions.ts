@@ -9,15 +9,46 @@ import {
   buildJobSourceConfig,
   inferFetchMethod,
   inferInternalSourceType,
+  parseJobSourceConfig,
   type JobSourceFetchMethod,
   type JobSourceUiType,
 } from "@/lib/jobs/source-config";
+import { buildPunjabSourcePackRows, PUNJAB_SOURCE_PACK } from "@/lib/jobs/punjab-source-pack";
 import { buildTrustedSourcePackRows, TRUSTED_SOURCE_PACK } from "@/lib/jobs/trusted-source-pack";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { runSingleJobFetch } from "@/server/job-fetcher/scheduler";
 
 async function getMutationClient() {
   return getSupabaseAdminClient() ?? (await createClient());
+}
+
+async function repairExistingSourceDefinitions(
+  client: Awaited<ReturnType<typeof getMutationClient>>,
+  rows: Array<Record<string, unknown>>,
+) {
+  for (const row of rows) {
+    const name = typeof row.name === "string" ? row.name : "";
+    const sourceUrl = typeof row.source_url === "string" ? row.source_url : "";
+    if (!name || !sourceUrl) {
+      continue;
+    }
+
+    const { data: existing } = await client
+      .from("job_sources")
+      .select("id, source_url")
+      .eq("name", name)
+      .maybeSingle();
+
+    if (!existing?.id || existing.source_url === sourceUrl) {
+      continue;
+    }
+
+    await client
+      .from("job_sources")
+      .update(row as never)
+      .eq("id", existing.id);
+  }
 }
 
 function slugify(value: string) {
@@ -317,6 +348,26 @@ export async function rejectFetchedJobAction(formData: FormData) {
   redirect(returnTo);
 }
 
+export async function rejectNormalizedJobAction(formData: FormData) {
+  await requireRole(["admin"]);
+  const client = await getMutationClient();
+  const normalizedJobId = String(formData.get("normalizedJobId") ?? "").trim();
+  const returnTo = readReturnTo(formData, "/admin/jobs/fetched");
+
+  if (normalizedJobId) {
+    await client
+      .from("normalized_jobs")
+      .update({
+        status: "rejected",
+      } as never)
+      .eq("id", normalizedJobId);
+  }
+
+  revalidatePath("/admin/jobs/fetched");
+  revalidatePath("/admin/jobs/review");
+  redirect(returnTo);
+}
+
 export async function approveFetchedJobAction(formData: FormData) {
   const admin = await requireRole(["admin"]);
   const client = await getMutationClient();
@@ -427,6 +478,29 @@ export async function approveFetchedJobAction(formData: FormData) {
   redirect(returnTo);
 }
 
+export async function approveNormalizedJobAction(formData: FormData) {
+  await requireRole(["admin"]);
+  const client = await getMutationClient();
+  const normalizedJobId = String(formData.get("normalizedJobId") ?? "").trim();
+  const returnTo = readReturnTo(formData, "/admin/jobs/fetched");
+
+  if (!normalizedJobId) {
+    redirect(returnTo);
+  }
+
+  await client
+    .from("normalized_jobs")
+    .update({
+      status: "approved",
+    } as never)
+    .eq("id", normalizedJobId);
+
+  revalidatePath("/admin/jobs/fetched");
+  revalidatePath("/admin/jobs/review");
+  revalidatePath("/jobs");
+  redirect(returnTo);
+}
+
 export async function updateJobSourceStatusAction(formData: FormData) {
   const admin = await requireRole(["admin"]);
   const client = await getMutationClient();
@@ -487,9 +561,66 @@ export async function importTrustedSourcePackAction(formData: FormData) {
   const returnTo = readReturnTo(formData, "/admin/job-sources");
 
   const rows = buildTrustedSourcePackRows(admin.id);
+  await repairExistingSourceDefinitions(client, rows as Array<Record<string, unknown>>);
   await client.from("job_sources").upsert(rows as never[], { onConflict: "source_url" });
 
   console.info(`Imported trusted source pack with ${Math.min(TRUSTED_SOURCE_PACK.length, 100)} sources.`);
+
+  revalidatePath("/admin/job-sources");
+  revalidatePath("/admin/jobs/sources");
+  revalidatePath("/admin/jobs/fetched");
+  revalidatePath("/admin");
+  redirect(returnTo);
+}
+
+export async function importPunjabSourcePackAction(formData: FormData) {
+  const admin = await requireRole(["admin"]);
+  const client = await getMutationClient();
+  const returnTo = readReturnTo(formData, "/admin/job-sources");
+
+  const rows = buildPunjabSourcePackRows(admin.id);
+  await repairExistingSourceDefinitions(client, rows as Array<Record<string, unknown>>);
+  await client.from("job_sources").upsert(rows as never[], { onConflict: "source_url" });
+
+  console.info(`Imported Punjab source pack with ${PUNJAB_SOURCE_PACK.length} sources.`);
+
+  revalidatePath("/admin/job-sources");
+  revalidatePath("/admin/jobs/sources");
+  revalidatePath("/admin/jobs/fetched");
+  revalidatePath("/admin");
+  redirect(returnTo);
+}
+
+export async function runPunjabJobSourcesAction(formData: FormData) {
+  await requireRole(["admin"]);
+  const client = await getMutationClient();
+  const returnTo = readReturnTo(formData, "/admin/job-sources");
+
+  const { data } = await client
+    .from("job_sources")
+    .select("id, name, source_type, transport_type, source_url, status, allow_auto_fetch, config, notes, last_fetched_at")
+    .eq("status", "active")
+    .order("updated_at", { ascending: false });
+
+  const punjabSourceIds = (data ?? [])
+    .filter((source) => {
+      const config = parseJobSourceConfig({
+        sourceType: source.source_type,
+        transportType: source.transport_type,
+        config: source.config,
+      });
+
+      return config.coverageRegion === "punjab";
+    })
+    .map((source) => source.id);
+
+  for (const sourceId of punjabSourceIds) {
+    try {
+      await runSingleJobFetch(sourceId, "manual");
+    } catch (error) {
+      console.error(`Punjab source fetch failed for ${sourceId}`, error);
+    }
+  }
 
   revalidatePath("/admin/job-sources");
   revalidatePath("/admin/jobs/sources");

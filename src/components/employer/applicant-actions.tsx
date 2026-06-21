@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 
 export function ApplicantActions({
   applicationId,
-  resumeUrl,
+  resumeHref,
 }: {
   applicationId: string;
-  resumeUrl?: string | null;
+  resumeHref?: string | null;
 }) {
   const router = useRouter();
   const [isBusy, setIsBusy] = useState<string | null>(null);
@@ -59,8 +59,8 @@ export function ApplicantActions({
         >
           <ThumbsDown className="size-4" />
         </Button>
-        <Button asChild size="sm" variant="outline" disabled={!resumeUrl}>
-          <a href={resumeUrl || "#"} download target="_blank" rel="noreferrer">
+        <Button asChild size="sm" variant="outline" disabled={!resumeHref}>
+          <a href={resumeHref || "#"} target="_blank" rel="noreferrer">
             <Download className="size-4" />
             Resume
           </a>

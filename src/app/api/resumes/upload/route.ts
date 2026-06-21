@@ -1,19 +1,13 @@
-import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import {
+  buildResumeStoragePath,
+  isAllowedResumeMimeType,
+  isSafeResumeFileName,
+  MAX_RESUME_FILE_SIZE_BYTES,
+  RESUME_BUCKET,
+} from "@/lib/resumes/storage";
 import { createClient } from "@/lib/supabase/server";
-
-const RESUME_BUCKET = "candidate-resumes";
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-]);
-
-function sanitizeFileName(fileName: string) {
-  return fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-");
-}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -36,21 +30,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Choose a resume file to upload." }, { status: 400 });
   }
 
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+  if (!isSafeResumeFileName(file.name)) {
+    return NextResponse.json(
+      { message: "Use a safe file name with letters, numbers, spaces, dots, dashes, or underscores." },
+      { status: 400 },
+    );
+  }
+
+  if (!isAllowedResumeMimeType(file.type)) {
     return NextResponse.json(
       { message: "Upload a PDF, DOC, or DOCX resume." },
       { status: 400 },
     );
   }
 
-  if (file.size > MAX_FILE_SIZE_BYTES) {
+  if (file.size > MAX_RESUME_FILE_SIZE_BYTES) {
     return NextResponse.json(
       { message: "Resume files must be 5 MB or smaller." },
       { status: 400 },
     );
   }
 
-  const filePath = `${user.id}/${randomUUID()}-${sanitizeFileName(file.name)}`;
+  const filePath = buildResumeStoragePath(user.id, file.name);
   const { error: uploadError } = await supabase.storage
     .from(RESUME_BUCKET)
     .upload(filePath, file, {
@@ -65,7 +66,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: publicUrlData } = supabase.storage.from(RESUME_BUCKET).getPublicUrl(filePath);
   const title = requestedTitle || file.name.replace(/\.[^.]+$/, "") || "Uploaded resume";
 
   const { data: resume, error: insertError } = await supabase
@@ -73,10 +73,10 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       title,
-      file_url: publicUrlData.publicUrl,
+      storage_path: filePath,
       template_key: "uploaded",
     } as never)
-    .select("id, title, file_url, updated_at")
+    .select("id, title, storage_path, updated_at")
     .single();
 
   if (insertError || !resume?.id) {
@@ -101,9 +101,8 @@ export async function POST(request: Request) {
     resume: {
       id: resume.id,
       title: resume.title,
-      fileUrl: resume.file_url,
+      storagePath: resume.storage_path,
       updatedAt: resume.updated_at,
     },
-    uploadedResumeUrl: resume.file_url,
   });
 }

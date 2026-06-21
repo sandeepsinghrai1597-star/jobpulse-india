@@ -1,23 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Phone, User } from "lucide-react";
 import { signupSchema } from "@/lib/validation/schemas";
+import { type AuthErrorState, logAuthError, mapAuthError } from "@/lib/auth/auth-errors";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { RoleSelector } from "@/components/auth/role-selector";
 
 export function SignupForm() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"candidate" | "employer">("candidate");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthErrorState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -34,7 +36,10 @@ export function SignupForm() {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Please complete the signup form.");
+      setError({
+        title: "Signup details incomplete",
+        message: parsed.error.issues[0]?.message ?? "Please complete the signup form.",
+      });
       return;
     }
 
@@ -43,46 +48,55 @@ export function SignupForm() {
     let supabase;
     try {
       supabase = createClient();
-    } catch {
-      setError("Supabase auth is not configured. Add the public Supabase keys to your environment.");
+    } catch (createClientError) {
+      logAuthError("signup:create-client", createClientError);
+      setError(mapAuthError(createClientError));
       setIsSubmitting(false);
       return;
     }
 
     const redirectPath = parsed.data.role === "employer" ? "/employer" : "/dashboard";
-    const { error: signUpError, data } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirectPath}`,
-        data: {
-          full_name: parsed.data.fullName,
-          phone: parsed.data.phone,
-          role: parsed.data.role,
+
+    try {
+      const { error: signUpError, data } = await supabase.auth.signUp({
+        email: parsed.data.email,
+        password: parsed.data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirectPath}`,
+          data: {
+            full_name: parsed.data.fullName,
+            phone: parsed.data.phone,
+            role: parsed.data.role,
+          },
         },
-      },
-    });
+      });
 
-    if (signUpError) {
-      setError(signUpError.message);
+      if (signUpError) {
+        logAuthError("signup:sign-up", signUpError);
+        setError(mapAuthError(signUpError));
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!data.session) {
+        setMessage(
+          "Account created. Check your email to confirm your account before signing in, unless email confirmations are disabled in Supabase Auth.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.refresh();
+      router.push(redirectPath);
+    } catch (signUpError) {
+      logAuthError("signup:unexpected", signUpError);
+      setError(mapAuthError(signUpError));
       setIsSubmitting(false);
-      return;
     }
-
-    if (!data.session) {
-      setMessage(
-        "Account created. Check your email to confirm your account before signing in, unless email confirmations are disabled in Supabase Auth.",
-      );
-      setIsSubmitting(false);
-      return;
-    }
-
-    router.refresh();
-    router.push(redirectPath);
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form ref={formRef} className="space-y-5" onSubmit={handleSubmit}>
       {/* Full Name Input */}
       <div className="space-y-2">
         <label htmlFor="fullname" className="text-sm font-semibold text-slate-900">
@@ -94,6 +108,7 @@ export function SignupForm() {
             id="fullname"
             type="text"
             placeholder="John Doe"
+            disabled={isSubmitting}
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
@@ -112,6 +127,8 @@ export function SignupForm() {
             id="email"
             type="email"
             placeholder="you@example.com"
+            autoComplete="email"
+            disabled={isSubmitting}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
@@ -130,6 +147,7 @@ export function SignupForm() {
             id="phone"
             type="tel"
             placeholder="+91 98765 43210"
+            disabled={isSubmitting}
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
@@ -151,6 +169,8 @@ export function SignupForm() {
             id="password"
             type="password"
             placeholder="Minimum 8 characters"
+            autoComplete="new-password"
+            disabled={isSubmitting}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-slate-400"
@@ -161,8 +181,16 @@ export function SignupForm() {
       {/* Error Alert */}
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="font-semibold text-red-900">Signup failed</p>
-          <p className="mt-1 text-sm text-red-800">{error}</p>
+          <p className="font-semibold text-red-900">{error.title}</p>
+          <p className="mt-1 text-sm text-red-800">{error.message}</p>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => formRef.current?.requestSubmit()}
+            className="mt-3 text-sm font-semibold text-red-900 underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            Retry
+          </button>
         </div>
       ) : null}
 

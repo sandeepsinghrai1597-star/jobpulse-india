@@ -1,8 +1,14 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { filterVisibleJobRows } from "@/lib/jobs/visibility";
 import type { Job } from "@/types";
 
 const NCS_HOME_URL = "https://www.ncs.gov.in/";
+export const PUBLIC_JOBS_REVALIDATE_SECONDS = 300;
+
+let publicReadClient: ReturnType<typeof createSupabaseClient> | null = null;
 
 function deriveUiCategorySlug(input: {
   title?: string;
@@ -232,7 +238,9 @@ export interface SupabaseJobRow {
   moderation_notes?: string | null;
   is_featured?: boolean | null;
   application_url: string | null;
+  apply_url?: string | null;
   deadline: string | null;
+  expires_at?: string | null;
   source_type: "employer" | "admin" | "official" | "partner" | null;
   source_url: string | null;
   created_at: string;
@@ -267,7 +275,9 @@ const JOB_PUBLIC_SELECT = [
   "approval_status",
   "is_featured",
   "application_url",
+  "apply_url",
   "deadline",
+  "expires_at",
   "source_type",
   "source_url",
   "created_at",
@@ -299,6 +309,7 @@ const JOB_OFFICIAL_SELECT = [
   "recruiter_contact",
   "status",
   "application_url",
+  "apply_url",
   "deadline",
   "source_type",
   "source_url",
@@ -342,7 +353,7 @@ export function dbRowToJob(row: SupabaseJobRow): Job {
     openings: row.openings ?? 0,
     applicationDeadline: row.deadline ?? "Check official listing",
     recruiterContact: row.recruiter_contact ?? "",
-    applicationUrl: row.application_url ?? row.source_url ?? NCS_HOME_URL,
+    applicationUrl: row.application_url ?? row.apply_url ?? row.source_url ?? NCS_HOME_URL,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     status: row.status,
@@ -432,7 +443,7 @@ export async function loadOfficialJobsFromSupabase() {
     return [];
   }
 
-  return data.map((row) => dbRowToJob(row as SupabaseJobRow));
+  return data.map((row) => dbRowToJob(row as unknown as SupabaseJobRow));
 }
 
 async function persistOfficialJobs(jobs: Job[]) {
@@ -487,38 +498,72 @@ export function dedupeJobs(input: Job[]) {
 }
 
 async function getPublishedJobsClient() {
-  return getSupabaseAdminClient() ?? (await createClient());
-}
-
-export async function getUnifiedJobs() {
-  const client = await getPublishedJobsClient();
-  const { data, error } = await client
-    .from("jobs")
-    .select(JOB_PUBLIC_SELECT)
-    .eq("approval_status", "approved")
-    .eq("status", "active")
-    .order("is_featured", { ascending: false })
-    .order("updated_at", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error || !data) {
-    return [];
+  const admin = getSupabaseAdminClient();
+  if (admin) {
+    return admin;
   }
 
-  return (data as SupabaseJobRow[]).map((row) => dbRowToJob(row));
+  if (!publicReadClient) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return null;
+    }
+
+    publicReadClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+  }
+
+  return publicReadClient;
 }
 
-export async function getUnifiedJobBySlug(slug: string) {
+const loadUnifiedJobs = unstable_cache(async () => {
+  try {
+    const client = await getPublishedJobsClient();
+    if (!client) {
+      return [];
+    }
+
+    const { data, error } = await client
+      .from("jobs")
+      .select(JOB_PUBLIC_SELECT)
+      .eq("approval_status", "approved")
+      .eq("status", "active")
+      .order("is_featured", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      return [];
+    }
+
+    return filterVisibleJobRows(data as unknown as SupabaseJobRow[]).map((row) => dbRowToJob(row));
+  } catch (error) {
+    console.error("Failed to load unified jobs", error);
+    return [];
+  }
+}, ["public-unified-jobs"], { revalidate: PUBLIC_JOBS_REVALIDATE_SECONDS });
+
+export const getUnifiedJobs = cache(async () => loadUnifiedJobs());
+
+export const getUnifiedJobBySlug = cache(async (slug: string) => {
   const allJobs = await getUnifiedJobs();
   return allJobs.find((job) => job.slug === slug);
-}
+});
 
-export async function getUnifiedJobByIdentifier(identifier: string) {
+export const getUnifiedJobByIdentifier = cache(async (identifier: string) => {
   const allJobs = await getUnifiedJobs();
   return allJobs.find((job) => job.id === identifier || job.slug === identifier);
-}
+});
 
-export async function getUnifiedSimilarJobs(slug: string) {
+export const getUnifiedSimilarJobs = cache(async (slug: string) => {
   const allJobs = await getUnifiedJobs();
   const current = allJobs.find((job) => job.slug === slug);
   if (!current) return [];
@@ -532,7 +577,7 @@ export async function getUnifiedSimilarJobs(slug: string) {
           job.skills.some((skill) => current.skills.includes(skill))),
     )
     .slice(0, 3);
-}
+});
 
 export async function syncOfficialSources() {
   const sources = [];

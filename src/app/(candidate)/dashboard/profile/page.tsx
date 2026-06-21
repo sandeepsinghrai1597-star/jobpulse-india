@@ -34,15 +34,23 @@ export default async function CandidateProfilePage() {
   } = await supabase.auth.getUser();
 
   let initialProfile = getEmptyCandidateProfile();
+  let hasResumeOnFile = false;
 
   if (user) {
-    const { data } = await supabase
-      .from("candidate_profiles")
-      .select(profileSelect)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const [{ data }, resumesResult] = await Promise.all([
+      supabase
+        .from("candidate_profiles")
+        .select(profileSelect)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("resumes")
+        .select("id", { head: true, count: "exact" })
+        .eq("user_id", user.id),
+    ]);
 
     initialProfile = mapCandidateProfileRow(data);
+    hasResumeOnFile = (resumesResult.count ?? 0) > 0;
   }
 
   return (
@@ -51,7 +59,7 @@ export default async function CandidateProfilePage() {
       title="Candidate profile"
       description="Build a verified profile with skills, preferences, resume, and application-ready identity details."
     >
-      <CandidateProfileForm initialProfile={initialProfile} />
+      <CandidateProfileForm initialProfile={initialProfile} hasResumeOnFile={hasResumeOnFile} />
     </DashboardShell>
   );
 }

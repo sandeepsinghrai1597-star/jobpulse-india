@@ -87,7 +87,12 @@ describe("job fetcher html parser", () => {
       raw_location: "Bengaluru, Karnataka",
       raw_apply_url: "https://careers.acme.com/jobs/frontend-engineer",
     });
-    expect(jobs[0].raw_description).toContain("React");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://careers.acme.com/jobs/frontend-engineer",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
     expect(jobs[0].raw_data_json).toMatchObject({
       sourceUrl: "https://careers.acme.com/jobs",
       detail_url: "https://careers.acme.com/jobs/frontend-engineer",

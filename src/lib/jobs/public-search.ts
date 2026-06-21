@@ -1,5 +1,6 @@
 import type { Job } from "@/types";
 import { getUnifiedJobs } from "@/lib/jobs/live";
+import { filterVisibleJobs, isPublicJobObjectVisible } from "@/lib/jobs/visibility";
 
 export const JOBS_PAGE_SIZE = 12;
 const MAX_SKILL_FACETS = 12;
@@ -65,7 +66,7 @@ export interface RelatedSearchLink {
 }
 
 export interface PublicJobsSearchResult {
-  allResults: Job[];
+  activeCount: number;
   results: Job[];
   total: number;
   page: number;
@@ -412,7 +413,7 @@ export function filterPublicJobs(jobs: Job[], query: PublicJobsQuery) {
     const matchesFresher = query.fresher ? jobMatchesExperience(job, "fresher") : true;
 
     return (
-      job.status === "active" &&
+      isPublicJobObjectVisible(job) &&
       matchesKeyword &&
       matchesCity &&
       matchesState &&
@@ -437,7 +438,7 @@ export async function searchPublicJobs(
   jobs?: Job[],
 ): Promise<PublicJobsSearchResult> {
   const sourceJobs = jobs ?? (await getUnifiedJobs());
-  const activeJobs = sourceJobs.filter((job) => job.status === "active");
+  const activeJobs = filterVisibleJobs(sourceJobs);
   const facets = buildFacets(activeJobs);
   const filtered = filterPublicJobs(activeJobs, query);
   const sorted = sortJobs(filtered, query.sort);
@@ -448,7 +449,7 @@ export async function searchPublicJobs(
   const results = sorted.slice(start, start + JOBS_PAGE_SIZE);
 
   return {
-    allResults: sorted,
+    activeCount: activeJobs.length,
     results,
     total,
     page,

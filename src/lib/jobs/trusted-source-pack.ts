@@ -1,6 +1,6 @@
 import { buildJobSourceConfig } from "@/lib/jobs/source-config";
 
-type TrustedSourceSeed = {
+export type TrustedSourceSeed = {
   name: string;
   sourceType:
     | "government-source"
@@ -123,7 +123,7 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
     name: "DRDO Careers",
     sourceType: "government-source",
     fetchMethod: "government",
-    sourceUrl: "https://www.drdo.gov.in/drdo/careers",
+    sourceUrl: "https://www.drdo.gov.in/",
     companyName: "DRDO",
     industry: "Defence Research",
     defaultCity: "New Delhi",
@@ -162,7 +162,7 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
     name: "BEL Careers",
     sourceType: "government-source",
     fetchMethod: "government",
-    sourceUrl: "https://bel-india.in/careers/",
+    sourceUrl: "https://bel-india.in/",
     companyName: "Bharat Electronics Limited",
     industry: "Defence Electronics",
     defaultCity: "Bengaluru",
@@ -175,7 +175,7 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
     name: "HAL Careers",
     sourceType: "government-source",
     fetchMethod: "government",
-    sourceUrl: "https://hal-india.co.in/career",
+    sourceUrl: "https://www.hal-india.co.in/",
     companyName: "Hindustan Aeronautics Limited",
     industry: "Aerospace",
     defaultCity: "Bengaluru",
@@ -188,14 +188,14 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
     name: "ECIL Careers",
     sourceType: "government-source",
     fetchMethod: "government",
-    sourceUrl: "https://www.ecil.co.in/jobs.html",
+    sourceUrl: "https://www.ecil.co.in/",
     companyName: "Electronics Corporation of India Limited",
     industry: "Electronics",
     defaultCity: "Hyderabad",
     defaultState: "Telangana",
-    allowAutoFetch: true,
+    allowAutoFetch: false,
     isActive: true,
-    notes: GOVERNMENT_NOTE,
+    notes: `${GOVERNMENT_NOTE} Auto fetch is disabled because parts of the site are disallowed by robots.txt.`,
   },
   {
     name: "NTPC Careers",
@@ -227,7 +227,7 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
     name: "NHPC Careers",
     sourceType: "government-source",
     fetchMethod: "government",
-    sourceUrl: "https://www.nhpcindia.com/career.htm",
+    sourceUrl: "https://www.nhpcindia.com/",
     companyName: "NHPC",
     industry: "Hydropower",
     defaultCity: "Faridabad",
@@ -266,7 +266,7 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
     name: "IOCL Jobs",
     sourceType: "government-source",
     fetchMethod: "government",
-    sourceUrl: "https://iocl.com/latest-job-opening",
+    sourceUrl: "https://iocl.com/",
     companyName: "Indian Oil Corporation",
     industry: "Oil and Gas",
     defaultCity: "New Delhi",
@@ -1330,8 +1330,8 @@ export const TRUSTED_SOURCE_PACK: TrustedSourceSeed[] = [
   },
 ];
 
-export function buildTrustedSourcePackRows(adminUserId: string) {
-  return TRUSTED_SOURCE_PACK.slice(0, 100).map((source) => ({
+export function buildSourcePackRows(adminUserId: string, sources: TrustedSourceSeed[]) {
+  return sources.map((source) => ({
     name: source.name,
     source_type:
       source.sourceType === "government-source"
@@ -1355,4 +1355,8 @@ export function buildTrustedSourcePackRows(adminUserId: string) {
     created_by: adminUserId,
     updated_by: adminUserId,
   }));
+}
+
+export function buildTrustedSourcePackRows(adminUserId: string) {
+  return buildSourcePackRows(adminUserId, TRUSTED_SOURCE_PACK.slice(0, 100));
 }

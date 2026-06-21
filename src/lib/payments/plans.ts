@@ -26,7 +26,7 @@ export const publicPricingPlans: PricingPlanDefinition[] = [
     id: "candidate-free",
     audience: "candidate",
     name: "Free",
-    priceLabel: "₹0",
+    priceLabel: "Rs 0",
     description: "For candidates who want to explore jobs and start building their profile.",
     features: [
       "Search jobs",
@@ -40,7 +40,7 @@ export const publicPricingPlans: PricingPlanDefinition[] = [
     id: "candidate-pro",
     audience: "candidate",
     name: "Pro",
-    priceLabel: "₹199/month",
+    priceLabel: "Rs 199/month",
     description: "For candidates actively improving resumes, interview readiness, and job-fit clarity.",
     features: [
       "Resume ATS analyzer",
@@ -56,7 +56,7 @@ export const publicPricingPlans: PricingPlanDefinition[] = [
     id: "employer-free",
     audience: "employer",
     name: "Free",
-    priceLabel: "₹0",
+    priceLabel: "Rs 0",
     description: "For employers testing JobPulse with a single opening.",
     features: ["1 job post"],
     cta: "Start free",
@@ -65,7 +65,7 @@ export const publicPricingPlans: PricingPlanDefinition[] = [
     id: "employer-basic",
     audience: "employer",
     name: "Basic",
-    priceLabel: "₹999/month",
+    priceLabel: "Rs 999/month",
     description: "For growing teams that need posting capacity and a cleaner hiring workflow.",
     features: [
       "5 job posts",
@@ -78,7 +78,7 @@ export const publicPricingPlans: PricingPlanDefinition[] = [
     id: "employer-pro",
     audience: "employer",
     name: "Pro",
-    priceLabel: "₹2999/month",
+    priceLabel: "Rs 2999/month",
     description: "For active hiring teams that want sourcing power, AI help, and premium reach.",
     features: [
       "Unlimited job posts",
@@ -96,7 +96,7 @@ export const paidPlans: Record<PaidPlanId, PaidPlanDefinition> = {
     id: "candidate-pro",
     audience: "candidate",
     name: "Pro",
-    priceLabel: "₹199/month",
+    priceLabel: "Rs 199/month",
     description: "For candidates actively improving resumes, interview readiness, and job-fit clarity.",
     features: [
       "Resume ATS analyzer",
@@ -114,7 +114,7 @@ export const paidPlans: Record<PaidPlanId, PaidPlanDefinition> = {
     id: "employer-basic",
     audience: "employer",
     name: "Basic",
-    priceLabel: "₹999/month",
+    priceLabel: "Rs 999/month",
     description: "For growing teams that need posting capacity and a cleaner hiring workflow.",
     features: [
       "5 job posts",
@@ -129,7 +129,7 @@ export const paidPlans: Record<PaidPlanId, PaidPlanDefinition> = {
     id: "employer-pro",
     audience: "employer",
     name: "Pro",
-    priceLabel: "₹2999/month",
+    priceLabel: "Rs 2999/month",
     description: "For active hiring teams that want sourcing power, AI help, and premium reach.",
     features: [
       "Unlimited job posts",

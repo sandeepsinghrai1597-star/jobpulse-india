@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboards/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildResumeDownloadHref } from "@/lib/resumes/storage";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CandidateResumesPage() {
@@ -14,13 +15,14 @@ export default async function CandidateResumesPage() {
     id: string;
     title: string;
     updated_at: string;
+    storage_path: string | null;
     template_key: string | null;
   }> = [];
 
   if (user?.id) {
     const { data } = await supabase
       .from("resumes")
-      .select("id, title, template_key, updated_at")
+      .select("id, title, template_key, updated_at, storage_path")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
@@ -58,6 +60,13 @@ export default async function CandidateResumesPage() {
                   Template: {resume.template_key ?? "fresher"}
                 </p>
                 <p className="mt-1 text-slate-500">Updated {resume.updated_at}</p>
+                {resume.storage_path ? (
+                  <Button asChild size="sm" variant="secondary" className="mt-3">
+                    <a href={buildResumeDownloadHref({ resumeId: resume.id })} target="_blank" rel="noreferrer">
+                      Download
+                    </a>
+                  </Button>
+                ) : null}
               </div>
             ))
           ) : (

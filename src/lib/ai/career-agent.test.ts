@@ -1,3 +1,7 @@
+jest.mock("@/lib/ai/gemini", () => ({
+  generateStructuredAiResponse: jest.fn(),
+}));
+
 import {
   buildCareerAgentResponse,
   sanitizeMatchingJobs,

@@ -132,9 +132,11 @@ export type Database = {
           id: string;
           job_id: string;
           resume_id: string | null;
+          resume_storage_path: string | null;
           resume_url: string | null;
           status: Database["public"]["Enums"]["application_status"];
           updated_at: string;
+          user_id: string;
         };
         Insert: {
           applied_at?: string;
@@ -145,9 +147,11 @@ export type Database = {
           id?: string;
           job_id: string;
           resume_id?: string | null;
+          resume_storage_path?: string | null;
           resume_url?: string | null;
           status?: Database["public"]["Enums"]["application_status"];
           updated_at?: string;
+          user_id: string;
         };
         Update: {
           applied_at?: string;
@@ -158,9 +162,11 @@ export type Database = {
           id?: string;
           job_id?: string;
           resume_id?: string | null;
+          resume_storage_path?: string | null;
           resume_url?: string | null;
           status?: Database["public"]["Enums"]["application_status"];
           updated_at?: string;
+          user_id?: string;
         };
         Relationships: [
           {
@@ -1037,6 +1043,7 @@ export type Database = {
           created_at: string;
           file_url: string | null;
           id: string;
+          storage_path: string | null;
           template_key: string | null;
           title: string;
           updated_at: string;
@@ -1049,6 +1056,7 @@ export type Database = {
           created_at?: string;
           file_url?: string | null;
           id?: string;
+          storage_path?: string | null;
           template_key?: string | null;
           title: string;
           updated_at?: string;
@@ -1061,6 +1069,7 @@ export type Database = {
           created_at?: string;
           file_url?: string | null;
           id?: string;
+          storage_path?: string | null;
           template_key?: string | null;
           title?: string;
           updated_at?: string;

@@ -479,20 +479,25 @@ function chooseBestLink(candidate: HtmlCandidate, source: JobSourceRecord, baseU
 
 function extractLocationText(text: string) {
   const normalized = text.replace(/\s+/g, " ").trim();
+  const sanitizeMatch = (value: string) =>
+    value
+      .replace(/\b(?:view role|view details|apply now|apply|learn more|read more)\b.*$/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
   const labeledMatch = normalized.match(/\b(?:location|job location|based in)\s*[:\-]\s*([^|.;]{2,100})/i);
   if (labeledMatch?.[1]) {
-    return labeledMatch[1].trim();
+    return sanitizeMatch(labeledMatch[1]);
   }
 
   const remoteMatch = normalized.match(/\b(remote|hybrid|onsite|work from home|wfh)\b/i);
   if (remoteMatch?.[1]) {
-    return remoteMatch[1].trim();
+    return sanitizeMatch(remoteMatch[1]);
   }
 
   const separatorMatch = normalized.match(/\b(?:india|remote)\b\s*[|,-]\s*([^|.;]{2,80})/i);
   if (separatorMatch?.[0]) {
-    return separatorMatch[0].trim();
+    return sanitizeMatch(separatorMatch[0]);
   }
 
   return null;
@@ -539,7 +544,13 @@ function extractDescriptionFromHtml(html: string) {
     .map((value) => value.trim())
     .filter((value) => value.length >= 80);
 
-  return priorityMatches.sort((left, right) => right.length - left.length)[0] ?? null;
+  const prioritized = priorityMatches.sort((left, right) => right.length - left.length)[0];
+  if (prioritized) {
+    return prioritized;
+  }
+
+  const fallbackText = stripHtml(html);
+  return fallbackText.length >= 40 ? fallbackText : null;
 }
 
 function extractStructuredJobsFromHtml(body: string) {
@@ -617,7 +628,11 @@ async function enrichWithDetailPage(
     respectRobots: true,
   });
 
-  const description = extractDescriptionFromHtml(detailPayload.body) ?? currentDescription;
+  const detailText = stripHtml(detailPayload.body);
+  const description =
+    extractDescriptionFromHtml(detailPayload.body) ??
+    (detailText.length >= 40 ? detailText : null) ??
+    currentDescription;
   return {
     description,
     detailPayload: {

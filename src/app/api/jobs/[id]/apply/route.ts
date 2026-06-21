@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import { PostgrestError } from "@supabase/supabase-js";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import { isCandidateVerified, mapCandidateProfileRow } from "@/lib/candidate/profile";
 import { ensurePersistedJobByIdentifier } from "@/lib/jobs/persistence";
 import { createClient } from "@/lib/supabase/server";
 
 async function resolveCandidateProfileId(userId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: existingProfile, error: profileError } = await supabase
     .from("candidate_profiles")
-    .select("id, resume_url")
+    .select("id, user_id, full_name, phone, headline, bio, education, skills, experience, city, state, preferred_roles, expected_salary, preferred_job_types, language_preference, resume_url, verified, verification_status, verification_requested_at, verified_at, updated_at")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (profileError) {
     return {
       id: null,
-      profileResumeUrl: null,
+      verified: false,
       message: "We could not load your candidate profile right now.",
     };
   }
@@ -22,7 +23,7 @@ async function resolveCandidateProfileId(userId: string, supabase: Awaited<Retur
   if (existingProfile?.id) {
     return {
       id: existingProfile.id as string,
-      profileResumeUrl: existingProfile.resume_url ?? null,
+      verified: isCandidateVerified(mapCandidateProfileRow(existingProfile as never)),
       message: null,
     };
   }
@@ -30,20 +31,20 @@ async function resolveCandidateProfileId(userId: string, supabase: Awaited<Retur
   const { data: createdProfile, error: createError } = await supabase
     .from("candidate_profiles")
     .insert({ user_id: userId } as never)
-    .select("id, resume_url")
+    .select("id")
     .single();
 
   if (createError || !createdProfile?.id) {
     return {
       id: null,
-      profileResumeUrl: null,
+      verified: false,
       message: "We could not prepare your candidate profile for this application.",
     };
   }
 
   return {
     id: createdProfile.id as string,
-    profileResumeUrl: createdProfile.resume_url ?? null,
+    verified: false,
     message: null,
   };
 }
@@ -65,7 +66,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const formData = await request.formData();
   const selectedResumeId = String(formData.get("resumeId") ?? "").trim();
-  const uploadedResumeUrl = String(formData.get("uploadedResumeUrl") ?? "").trim();
   const coverLetter = String(formData.get("coverLetter") ?? "").trim();
 
   const candidateProfile = await resolveCandidateProfileId(user.id, supabase);
@@ -76,13 +76,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
+  if (!candidateProfile.verified) {
+    return NextResponse.json(
+      {
+        message:
+          "Complete candidate verification before applying. Add your profile details and resume, then request review.",
+        redirectTo: "/dashboard/profile",
+      },
+      { status: 403 },
+    );
+  }
+
   let resumeId: string | null = null;
-  let resumeUrl: string | null = null;
+  let resumeStoragePath: string | null = null;
 
   if (selectedResumeId) {
     const { data: resume, error: resumeError } = await supabase
       .from("resumes")
-      .select("id, file_url")
+      .select("id, storage_path")
       .eq("id", selectedResumeId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -92,16 +103,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     resumeId = resume.id as string;
-    resumeUrl = resume.file_url ?? null;
-  } else if (uploadedResumeUrl) {
-    resumeUrl = uploadedResumeUrl;
-  } else if (candidateProfile.profileResumeUrl) {
-    resumeUrl = candidateProfile.profileResumeUrl;
+    resumeStoragePath = resume.storage_path ?? null;
   }
 
-  if (!resumeId && !resumeUrl) {
+  if (!resumeId || !resumeStoragePath) {
     return NextResponse.json(
-      { message: "Select an uploaded resume or upload a new resume before applying." },
+      { message: "Select an uploaded resume before applying." },
       { status: 400 },
     );
   }
@@ -117,9 +124,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { error } = await supabase.from("applications").insert({
     job_id: persistedJob.id,
+    user_id: user.id,
     candidate_id: candidateProfile.id,
     resume_id: resumeId,
-    resume_url: resumeUrl,
+    resume_storage_path: resumeStoragePath,
     cover_letter: coverLetter || null,
   } as never);
 

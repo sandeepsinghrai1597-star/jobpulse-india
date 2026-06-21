@@ -55,11 +55,17 @@ function getStatusCopy(profile: CandidateProfile) {
     label: "Not Verified",
     icon: AlertCircle,
     tone: "text-cyan-400",
-    description: "Complete this profile, add a resume link, and request verification to unlock applications.",
+    description: "Complete this profile, add a resume on file or secure resume link, and request verification to unlock applications.",
   };
 }
 
-export function CandidateProfileForm({ initialProfile }: { initialProfile: CandidateProfile }) {
+export function CandidateProfileForm({
+  initialProfile,
+  hasResumeOnFile = false,
+}: {
+  initialProfile: CandidateProfile;
+  hasResumeOnFile?: boolean;
+}) {
   const [profile, setProfile] = useState(initialProfile);
   const [skillsText, setSkillsText] = useState(initialProfile.skills.join(", "));
   const [rolesText, setRolesText] = useState(initialProfile.preferredRoles.join(", "));
@@ -71,18 +77,14 @@ export function CandidateProfileForm({ initialProfile }: { initialProfile: Candi
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const completion = calculateProfileCompletion({
+  const draftProfile = {
     ...profile,
     skills: parseListInput(skillsText),
     preferredRoles: parseListInput(rolesText),
     preferredJobTypes: parseListInput(jobTypesText),
-  });
-  const verificationReady = canRequestVerification({
-    ...profile,
-    skills: parseListInput(skillsText),
-    preferredRoles: parseListInput(rolesText),
-    preferredJobTypes: parseListInput(jobTypesText),
-  });
+  };
+  const completion = calculateProfileCompletion(draftProfile, { hasResumeOnFile });
+  const verificationReady = canRequestVerification(draftProfile, { hasResumeOnFile });
   const status = getStatusCopy(profile);
   const StatusIcon = status.icon;
 
@@ -175,7 +177,7 @@ export function CandidateProfileForm({ initialProfile }: { initialProfile: Candi
                 className="sm:col-span-2"
               />
               <Input
-                placeholder="Resume URL"
+                placeholder="Secure resume URL (optional if uploaded in Resume Library)"
                 type="url"
                 value={profile.resumeUrl}
                 onChange={(event) => setProfile((current) => ({ ...current, resumeUrl: event.target.value }))}
@@ -287,9 +289,14 @@ export function CandidateProfileForm({ initialProfile }: { initialProfile: Candi
             <p className="text-sm leading-6 text-muted-foreground">{status.description}</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>Only verified candidates can submit job applications.</li>
-              <li>Add a valid resume URL, core skills, and target roles before requesting review.</li>
+              <li>Add an uploaded resume or secure resume URL, core skills, and target roles before requesting review.</li>
               <li>Once approved, the job detail page unlocks direct apply.</li>
             </ul>
+            {hasResumeOnFile ? (
+              <p className="text-sm text-emerald-700">
+                A resume is already on file in your private resume library.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 

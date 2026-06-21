@@ -28,21 +28,25 @@ JobPulse India uses a staged ingestion pipeline for automated job intake.
    Adds a lightweight enrichment payload for summaries, cleaned titles, and trust signals.
    The system uses Gemini when configured and deterministic fallback metadata otherwise.
 
-7. Admin review
+7. Region scope filtering
+   Sources can carry scoped `locationKeywords` and a `coverageRegion`.
+   Broad feeds can therefore be limited to Punjab-only matches before they enter moderation.
+
+8. Admin review
    All fetched items land in `job_ingestion_items` with `review_status = pending_review`.
    Admins review them at `/admin/jobs/fetched`.
 
-8. Publish
+9. Publish
    Approval creates a real row in `jobs` with:
    `approval_status = approved`
    `status = active`
    `published_at` set
    `source_url` and `source_type` preserved
 
-9. Listing UI
+10. Listing UI
    Public jobs search now reads all approved active jobs, not only admin-authored ones.
 
-10. SEO-ready detail pages
+11. SEO-ready detail pages
     Published fetched jobs automatically flow into:
     `/jobs`
     `/jobs/[slug]`

@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { approveFetchedJobAction, rejectFetchedJobAction } from "@/app/(admin)/admin/jobs/ingestion-actions";
+import {
+  approveFetchedJobAction,
+  approveNormalizedJobAction,
+  rejectFetchedJobAction,
+  rejectNormalizedJobAction,
+} from "@/app/(admin)/admin/jobs/ingestion-actions";
 import { DashboardShell } from "@/components/dashboards/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,18 +28,84 @@ function dedupeLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
+type QueueEntry = {
+  id: string;
+  queueKind: "legacy" | "normalized";
+  title: string;
+  company_name: string;
+  city: string | null;
+  state: string | null;
+  source_type: string;
+  source_url: string | null;
+  application_url: string | null;
+  dedupe_status: string;
+  review_status: string;
+  review_notes: string | null;
+  created_at: string;
+  description: string;
+  skills: string[] | null;
+  published_job_id: string | null;
+};
+
 export default async function AdminFetchedJobsPage() {
   const client = await getClient();
-  const { data: items } = await client
-    .from("job_ingestion_items")
-    .select(
-      "id, title, company_name, city, state, source_type, source_url, application_url, dedupe_status, review_status, review_notes, created_at, description, skills, published_job_id",
-    )
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [{ data: legacyItems }, { data: normalizedItems }] = await Promise.all([
+    client
+      .from("job_ingestion_items")
+      .select(
+        "id, title, company_name, city, state, source_type, source_url, application_url, dedupe_status, review_status, review_notes, created_at, description, skills, published_job_id",
+      )
+      .order("created_at", { ascending: false })
+      .limit(100),
+    client
+      .from("normalized_jobs")
+      .select(
+        "id, title, company_name, city, state, source_type, source_url, apply_url, status, created_at, description, skills",
+      )
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
 
-  const pendingCount = (items ?? []).filter((item) => item.review_status === "pending_review").length;
-  const publishedCount = (items ?? []).filter((item) => item.review_status === "published").length;
+  const items: QueueEntry[] = [
+    ...((legacyItems ?? []) as Array<Omit<QueueEntry, "queueKind">>).map((item) => ({
+      ...item,
+      queueKind: "legacy" as const,
+    })),
+    ...((normalizedItems ?? []) as Array<{
+      id: string;
+      title: string;
+      company_name: string;
+      city: string | null;
+      state: string | null;
+      source_type: string;
+      source_url: string | null;
+      apply_url: string | null;
+      status: string;
+      created_at: string;
+      description: string;
+      skills: string[] | null;
+    }>).map((item) => ({
+      id: item.id,
+      queueKind: "normalized" as const,
+      title: item.title,
+      company_name: item.company_name,
+      city: item.city,
+      state: item.state,
+      source_type: item.source_type,
+      source_url: item.source_url,
+      application_url: item.apply_url,
+      dedupe_status: "new",
+      review_status: item.status,
+      review_notes: null,
+      created_at: item.created_at,
+      description: item.description,
+      skills: item.skills,
+      published_job_id: item.status === "approved" ? item.id : null,
+    })),
+  ].sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+
+  const pendingCount = items.filter((item) => item.review_status === "pending_review").length;
+  const publishedCount = items.filter((item) => ["published", "approved"].includes(item.review_status)).length;
 
   return (
     <DashboardShell
@@ -126,26 +197,42 @@ export default async function AdminFetchedJobsPage() {
                   ) : null}
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {item.review_status !== "published" ? (
-                      <form action={approveFetchedJobAction}>
-                        <input type="hidden" name="itemId" value={item.id} />
-                        <input type="hidden" name="returnTo" value="/admin/jobs/fetched" />
-                        <input type="hidden" name="reviewNotes" value={item.dedupe_status === "new" ? "Approved from fetched queue." : "Approved after duplicate review."} />
-                        <Button size="sm" className="rounded-xl">Approve and publish</Button>
-                      </form>
-                    ) : (
+                    {!["published", "approved", "rejected"].includes(item.review_status) ? (
+                      item.queueKind === "legacy" ? (
+                        <form action={approveFetchedJobAction}>
+                          <input type="hidden" name="itemId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="/admin/jobs/fetched" />
+                          <input type="hidden" name="reviewNotes" value={item.dedupe_status === "new" ? "Approved from fetched queue." : "Approved after duplicate review."} />
+                          <Button size="sm" className="rounded-xl">Approve and publish</Button>
+                        </form>
+                      ) : (
+                        <form action={approveNormalizedJobAction}>
+                          <input type="hidden" name="normalizedJobId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="/admin/jobs/fetched" />
+                          <Button size="sm" className="rounded-xl">Approve and publish</Button>
+                        </form>
+                      )
+                    ) : ["published", "approved"].includes(item.review_status) ? (
                       <Button asChild size="sm" variant="outline" className="rounded-xl border-slate-300 bg-white">
                         <Link href="/admin/jobs/review">Open published jobs</Link>
                       </Button>
-                    )}
+                    ) : null}
 
-                    {item.review_status !== "published" ? (
-                      <form action={rejectFetchedJobAction}>
-                        <input type="hidden" name="itemId" value={item.id} />
-                        <input type="hidden" name="returnTo" value="/admin/jobs/fetched" />
-                        <input type="hidden" name="reviewNotes" value="Rejected during fetched-jobs review." />
-                        <Button size="sm" variant="destructive" className="rounded-xl">Reject</Button>
-                      </form>
+                    {!["published", "approved", "rejected"].includes(item.review_status) ? (
+                      item.queueKind === "legacy" ? (
+                        <form action={rejectFetchedJobAction}>
+                          <input type="hidden" name="itemId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="/admin/jobs/fetched" />
+                          <input type="hidden" name="reviewNotes" value="Rejected during fetched-jobs review." />
+                          <Button size="sm" variant="destructive" className="rounded-xl">Reject</Button>
+                        </form>
+                      ) : (
+                        <form action={rejectNormalizedJobAction}>
+                          <input type="hidden" name="normalizedJobId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="/admin/jobs/fetched" />
+                          <Button size="sm" variant="destructive" className="rounded-xl">Reject</Button>
+                        </form>
+                      )
                     ) : null}
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { UserRole } from "@/types";
+import { getRoleFromAuthMetadata } from "@/lib/auth/auth-errors";
 import { createClient } from "@/lib/supabase/server";
 
 export interface CurrentUser {
@@ -10,22 +11,6 @@ export interface CurrentUser {
   phone?: string | null;
   currentPlan?: string | null;
   subscriptionStatus?: "active" | "paused" | "unsubscribed" | null;
-}
-
-function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRole: unknown): UserRole {
-  if (appMetadataRole === "admin") {
-    return "admin";
-  }
-
-  if (appMetadataRole === "employer" || appMetadataRole === "candidate") {
-    return appMetadataRole;
-  }
-
-  if (userMetadataRole === "employer" || userMetadataRole === "candidate") {
-    return userMetadataRole;
-  }
-
-  return "candidate";
 }
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {

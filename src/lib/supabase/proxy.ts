@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getRoleFromAuthMetadata, getRoleHome } from "@/lib/auth/auth-errors";
 
 function getSafeFallbackRole(role: unknown) {
   if (role === "employer" || role === "candidate") {
@@ -7,18 +8,6 @@ function getSafeFallbackRole(role: unknown) {
   }
 
   return "candidate";
-}
-
-function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRole: unknown) {
-  if (appMetadataRole === "admin") {
-    return "admin";
-  }
-
-  if (appMetadataRole === "employer" || appMetadataRole === "candidate") {
-    return appMetadataRole;
-  }
-
-  return getSafeFallbackRole(userMetadataRole);
 }
 
 export async function updateSession(request: NextRequest) {
@@ -87,7 +76,7 @@ export async function updateSession(request: NextRequest) {
     currentUser?.role ??
     getRoleFromAuthMetadata(
       user.app_metadata?.role,
-      user.user_metadata?.role,
+      getSafeFallbackRole(user.user_metadata?.role),
     );
 
   if (
@@ -95,8 +84,7 @@ export async function updateSession(request: NextRequest) {
     (isEmployerRoute && role !== "employer" && role !== "admin") ||
     (isAdminRoute && role !== "admin")
   ) {
-    const redirectPath = role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/dashboard";
-    return NextResponse.redirect(new URL(redirectPath, request.url));
+    return NextResponse.redirect(new URL(getRoleHome(role), request.url));
   }
 
   return response;

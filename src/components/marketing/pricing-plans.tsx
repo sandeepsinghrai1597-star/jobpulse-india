@@ -74,6 +74,7 @@ interface PricingPlansProps {
   employerPlans: PricingPlanDefinition[];
   currentRole: "candidate" | "employer" | "admin" | null;
   currentPlan: string | null;
+  paymentsEnabled: boolean;
 }
 
 export function PricingPlans({
@@ -81,6 +82,7 @@ export function PricingPlans({
   employerPlans,
   currentRole,
   currentPlan,
+  paymentsEnabled,
 }: PricingPlansProps) {
   const router = useRouter();
   const [loadingPlanId, setLoadingPlanId] = useState<PlanId | null>(null);
@@ -103,6 +105,11 @@ export function PricingPlans({
   async function startCheckout(planId: PlanId) {
     if (planId === "candidate-free" || planId === "employer-free") {
       router.push("/signup");
+      return;
+    }
+
+    if (!paymentsEnabled) {
+      setError("Paid checkout is not live in this environment yet. Keep free plans visible, but do not launch paid CTAs until Razorpay is configured.");
       return;
     }
 
@@ -257,7 +264,7 @@ export function PricingPlans({
             <Button
               className="h-11 w-full rounded-full px-5 text-sm font-semibold"
               variant={plan.highlighted ? "secondary" : "default"}
-              disabled={loadingPlanId === plan.id}
+              disabled={loadingPlanId === plan.id || (!paymentsEnabled && !plan.id.endsWith("free"))}
               onClick={() => startCheckout(plan.id)}
             >
               {loadingPlanId === plan.id ? "Opening checkout..." : plan.cta}
@@ -293,6 +300,11 @@ export function PricingPlans({
         {error ? (
           <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </div>
+        ) : null}
+        {!paymentsEnabled ? (
+          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Paid checkout is not configured in this environment. Free plans are safe to browse, but paid upgrades should stay disabled until Razorpay and server credentials are live.
           </div>
         ) : null}
       </div>
