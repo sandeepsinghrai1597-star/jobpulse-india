@@ -303,8 +303,12 @@ export function PricingPlans({
           </div>
         ) : null}
         {!paymentsEnabled ? (
-          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Paid checkout is not configured in this environment. Free plans are safe to browse, but paid upgrades should stay disabled until Razorpay and server credentials are live.
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-slate-300">
+            <span className="font-semibold text-white">Paid plans launching soon.</span>{" "}
+            Free plans are fully active. To get notified when Pro upgrades go live, email us at{" "}
+            <a href="mailto:hello@jobpulseindia.com" className="font-semibold text-primary hover:underline">
+              hello@jobpulseindia.com
+            </a>.
           </div>
         ) : null}
       </div>

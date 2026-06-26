@@ -25,23 +25,23 @@ export default function LearningRoadmapPage() {
           />
           <div className="flex flex-wrap gap-2">
             {careerGuides.map((guide) => (
-              <Badge key={guide.slug} variant="outline" className="rounded-full border-slate-300 px-3 py-1 text-slate-700">
+              <Badge key={guide.slug} variant="outline" className="rounded-full border-white/20 bg-white/6 px-3 py-1 text-slate-200">
                 {guide.targetRole}
               </Badge>
             ))}
           </div>
         </div>
-        <Card className="rounded-[2rem] border border-slate-200 bg-slate-950 text-white shadow-sm">
+        <Card className="rounded-[2rem] border border-white/10 bg-white/5 text-white shadow-sm">
           <CardContent className="space-y-4 p-6 sm:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-300">
               Included in every AI result
             </p>
             <ul className="space-y-3 text-sm leading-6 text-slate-200">
-              <li>- Skills required</li>
-              <li>- Weekly plan</li>
-              <li>- Projects to build</li>
-              <li>- Resume keywords</li>
-              <li>- Interview topics</li>
+              <li>✓ Skills required</li>
+              <li>✓ Weekly plan</li>
+              <li>✓ Projects to build</li>
+              <li>✓ Resume keywords</li>
+              <li>✓ Interview topics</li>
             </ul>
           </CardContent>
         </Card>
@@ -51,26 +51,26 @@ export default function LearningRoadmapPage() {
 
       <section className="space-y-5">
         <div className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
             Career guide library
           </p>
-          <h2 className="font-heading text-3xl font-semibold text-slate-950">
+          <h2 className="font-heading text-3xl font-semibold text-white">
             Start with a guide, then personalize it with AI
           </h2>
         </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {careerGuides.map((guide) => (
             <Link key={guide.slug} href={`/career-guide/${guide.slug}`}>
-              <Card className="h-full rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-lg">
+              <Card className="h-full rounded-[1.75rem] border border-white/10 bg-white/5 shadow-sm transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
                 <CardContent className="space-y-4 p-6">
                   <div className="space-y-3">
-                    <Badge variant="outline" className="rounded-full border-sky-200 bg-sky-50 text-sky-700">
+                    <Badge variant="outline" className="rounded-full border-white/20 bg-white/8 text-cyan-300">
                       {guide.duration}
                     </Badge>
-                    <h3 className="font-heading text-2xl font-semibold text-slate-950">{guide.title}</h3>
-                    <p className="text-sm leading-6 text-slate-600">{guide.summary}</p>
+                    <h3 className="font-heading text-2xl font-semibold text-white">{guide.title}</h3>
+                    <p className="text-sm leading-6 text-slate-400">{guide.summary}</p>
                   </div>
-                  <p className="text-sm font-medium text-slate-800">{guide.salaryRange}</p>
+                  <p className="text-sm font-medium text-slate-300">{guide.salaryRange}</p>
                 </CardContent>
               </Card>
             </Link>

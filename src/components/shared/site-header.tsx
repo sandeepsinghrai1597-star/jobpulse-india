@@ -1,5 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
-import { BriefcaseBusiness, Menu, Sparkles } from "lucide-react";
+import { Menu, Sparkles } from "lucide-react";
 import { siteConfig } from "@/lib/data/site";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +28,18 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-white/8 bg-[rgba(10,9,19,0.9)] backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex min-w-0 items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,45,120,0.2),rgba(0,255,204,0.08))] text-primary shadow-[0_0_18px_rgba(255,45,120,0.22)]">
-            <BriefcaseBusiness className="size-5" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="JobPulse India logo"
+            width={44}
+            height={44}
+            className="size-11 rounded-2xl object-contain"
+            priority
+          />
           <div className="min-w-0">
             <p className="truncate font-heading text-lg font-semibold text-white">{siteConfig.name}</p>
             <p className="truncate text-[11px] uppercase tracking-[0.22em] text-cyan-300">
-              Recruitment evolved. Powered by AI.
+              Find the right job faster with AI.
             </p>
           </div>
         </Link>

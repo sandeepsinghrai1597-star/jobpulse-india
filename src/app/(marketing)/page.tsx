@@ -5,10 +5,21 @@ import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/data/site";
 
 export const metadata = buildMetadata({
-  title: "Find Jobs Faster With Your AI Career Assistant",
+  title: "JobPulse India — Jobs, Resume Builder & AI Career Guidance",
+  absoluteTitle: "JobPulse India | Find Jobs, Build Resumes & Prepare for Interviews",
   description:
-    "Search jobs, improve your resume, prepare for interviews, and get AI career guidance built for India.",
+    "Search 150+ active jobs across India, build ATS-ready resumes, prepare for interviews, and get AI career guidance built for freshers, graduates & professionals.",
   path: "/",
+  keywords: [
+    "jobs in india",
+    "fresher jobs",
+    "government jobs india",
+    "remote jobs india",
+    "resume builder india",
+    "interview preparation india",
+    "ai career guidance",
+    "job search india 2026",
+  ],
 });
 
 export const revalidate = 300;
