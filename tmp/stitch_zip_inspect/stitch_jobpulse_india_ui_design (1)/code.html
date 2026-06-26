@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Candidate Dashboard | JobPulse India</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary": "#ff2d78", // Neon Pink
+                      "secondary": "#00f3ff", // Electric Cyan
+                      "background": "#0a0a0c", // Deep Obsidian
+                      "surface": "#121217",
+                      "on-surface": "#e1e1e1",
+                      "on-background": "#ffffff",
+                      "outline-variant": "rgba(255, 45, 120, 0.2)",
+                      "surface-container": "#1a1a24",
+                      "surface-container-low": "#16161e",
+                      "surface-container-high": "#23232e",
+                      "surface-container-lowest": "#0d0d12",
+                      "on-surface-variant": "#a0a0b0",
+                      "primary-container": "rgba(255, 45, 120, 0.15)",
+                      "on-primary-container": "#ff2d78",
+                      "secondary-container": "rgba(0, 243, 255, 0.15)",
+                      "on-secondary-container": "#00f3ff",
+                      "error": "#ff4b4b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "4px",
+                      "3xl": "64px",
+                      "2xl": "48px",
+                      "gutter": "24px",
+                      "xs": "4px",
+                      "md": "16px",
+                      "xl": "32px",
+                      "container-max": "1280px",
+                      "lg": "24px",
+                      "sm": "8px"
+              },
+              "fontFamily": {
+                      "display-lg-mobile": ["Sora"],
+                      "headline-lg": ["Sora"],
+                      "headline-md": ["Sora"],
+                      "body-md": ["Sora"],
+                      "body-sm": ["Sora"],
+                      "label-sm": ["Sora"],
+                      "display-lg": ["Sora"],
+                      "body-lg": ["Sora"],
+                      "label-md": ["Sora"]
+              },
+              "fontSize": {
+                      "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "headline-lg": ["30px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                      "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kanban-column {
+            min-width: 300px;
+            scroll-snap-align: start;
+        }
+        .glass-panel {
+            background: rgba(18, 18, 23, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 45, 120, 0.2);
+            box-shadow: 0 0 20px rgba(255, 45, 120, 0.05);
+        }
+        .neon-border {
+            border: 1px solid rgba(255, 45, 120, 0.4);
+            box-shadow: inset 0 0 10px rgba(255, 45, 120, 0.1), 0 0 10px rgba(255, 45, 120, 0.1);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 8px rgba(255, 45, 120, 0.6);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes pulse-neon {
+            0%, 100% { opacity: 0.8; box-shadow: 0 0 10px rgba(255, 45, 120, 0.3); }
+            50% { opacity: 1; box-shadow: 0 0 20px rgba(255, 45, 120, 0.6); }
+        }
+        .animate-neon {
+            animation: pulse-neon 2s infinite ease-in-out;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pb-24 md:pb-0 selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-primary/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex justify-between items-center px-gutter h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform" data-icon="menu">menu</span>
+<h1 class="text-headline-md font-headline-md font-bold text-primary neon-text-pink tracking-tight">JobPulse India</h1>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden md:flex gap-lg items-center px-xl">
+<span class="font-label-md text-label-md text-primary font-bold cursor-pointer hover:neon-text-pink transition-all">Find Jobs</span>
+<span class="font-label-md text-label-md text-on-surface-variant cursor-pointer hover:text-primary transition-colors">Messages</span>
+<span class="font-label-md text-label-md text-on-surface-variant cursor-pointer hover:text-primary transition-colors">AI Insights</span>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary cursor-pointer active:scale-95 transition-transform shadow-[0_0_10px_rgba(255,45,120,0.3)]">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a young Indian executive" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxcvFbYWz0Ys8cwAqx0bbkhOCVOdPtNItiSlQ6RtZRb5LCC33WMbTDs2Irff3aKpM1JYeijSOUPOrOmihbEd4_S852ngwGQwa6APanQX2Zz-fejTXsFlAj2mHPnUQiDlDsAeIo3sQODdktbFUvyqBcTxm-CaL40YtIcWbgbt9VdyopqbyMKYx4yoZ1LPpjSpfZtXbLRM_F-8BQEOqtFaA20a_EkXwchkba9PdhxKBMyztsfY40OQnE5iqapNjnlqILvs8edr90Xsk"/>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-24 px-gutter max-w-container-max mx-auto">
+<!-- Profile Summary Widget -->
+<section class="mb-xl">
+<div class="glass-panel p-lg rounded-xl flex flex-col md:flex-row items-center md:items-start gap-lg neon-border">
+<div class="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+<div class="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+<img class="w-full h-full rounded-full object-cover border-4 border-surface shadow-[0_0_15px_rgba(255,45,120,0.3)]" data-alt="Professional portfolio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDj0etOkWT4KIK67L-BXdnkMs675EUBiL-ICQqrP8QozQ80BOfvL-XVH7sV-ZgaB8_0XImzpKZFReXrQYbAqY4e_TjJcZ8NJiVFaYHAp1eAb6syhT3rdemzy0e9aaJMfgT7kHqoJcExXuqDScHs6Ge01HpyWVmB1gBKTzdVlONG-Az-vQ2jErDHsr3sg6avP78tLJqRMMessGuLwGxUjFjaLPImh6TsxIDaP0heyBL8shSIS6S0K6fGyvI62QMey3fTYoy9TPdQEmM"/>
+<div class="absolute bottom-1 right-1 bg-secondary p-1 rounded-full border-2 border-surface shadow-[0_0_8px_rgba(0,243,255,0.8)]">
+<span class="material-symbols-outlined text-[16px] text-background font-bold" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div class="flex-grow text-center md:text-left">
+<div class="flex flex-col md:flex-row md:items-center gap-sm mb-xs">
+<h2 class="font-headline-md text-headline-md text-on-surface">Arjun Malhotra</h2>
+<span class="inline-flex items-center px-md py-1 rounded-full bg-primary/20 text-primary font-label-md text-label-md w-fit mx-auto md:mx-0 border border-primary/30">
+                        Senior UI/UX Designer
+                    </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md max-w-2xl">
+                    AI-driven product design specialist with 8+ years of experience in FinTech and Recruitment ecosystems. Currently exploring high-impact roles in Bangalore and Mumbai.
+                </p>
+<div class="flex flex-wrap justify-center md:justify-start gap-md">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary neon-text-cyan" data-icon="location_on">location_on</span>
+<span class="font-label-md text-label-md">Bangalore, IN</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary neon-text-cyan" data-icon="work">work</span>
+<span class="font-label-md text-label-md">Open to Remote</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary neon-text-cyan" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md">Premium Member</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-sm min-w-[180px]">
+<button class="w-full bg-primary text-on-background font-label-md text-label-md py-md rounded-lg shadow-[0_0_15px_rgba(255,45,120,0.4)] hover:shadow-[0_0_20px_rgba(255,45,120,0.6)] transition-all active:scale-95">
+                    Edit Profile
+                </button>
+<button class="w-full border border-secondary text-secondary font-label-md text-label-md py-md rounded-lg hover:bg-secondary/10 transition-colors active:scale-95">
+                    View Resume
+                </button>
+</div>
+</div>
+</section>
+<!-- Application Stages Kanban -->
+<section class="mb-3xl">
+<div class="flex justify-between items-end mb-lg">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary neon-text-pink">Application Pipeline</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Track your recruitment progress across 12 active applications.</p>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-label-md text-label-md text-on-surface-variant">Sort by: Recent</span>
+<span class="material-symbols-outlined text-secondary cursor-pointer" data-icon="filter_list">filter_list</span>
+</div>
+</div>
+<!-- Kanban Board Container -->
+<div class="flex gap-lg overflow-x-auto pb-lg hide-scrollbar snap-x">
+<!-- Column: Applied -->
+<div class="kanban-column flex flex-col gap-md">
+<div class="flex items-center justify-between px-sm">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-6 bg-secondary rounded-full shadow-[0_0_8px_rgba(0,243,255,0.6)]"></span>
+<h4 class="font-label-md text-label-md uppercase tracking-wider text-secondary">Applied</h4>
+<span class="bg-surface-container-high px-2 py-0.5 rounded text-xs font-bold text-on-surface">4</span>
+</div>
+</div>
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-white/5 hover:border-secondary/50 transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center overflow-hidden border border-white/10">
+<img class="w-full h-full object-cover" data-alt="Tech logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9FciO0kVcPX2_YM1xp-litJSGm7Vw-ngIIxzPhw_0guh0GSiaVFluWuTbpV5lNbQLOBegB8tls9KBu2Cs6VtPXad2gR0OE6dCqhWS0C6W-W6QKmXLDO-AFUqdAH2428eFR9WBl-8YVuDAgtndTgNmPMTYpotQC5GDYt7B-tUDZFkrVHZTsQ0V5W4fdPuvf_-mn5Js5coPdO7jAVx7PTT-lYxM6t1WOmrwZCFQfGayq9XTus9PSOGSo-5i8KqHcUWraM1dHqpbWn4"/>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="more_vert">more_vert</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-xs">Product Designer</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Google India • Hyderabad</p>
+<div class="space-y-sm">
+<div class="flex justify-between text-[11px] font-bold text-secondary uppercase tracking-tighter">
+<span>Status: Reviewing</span>
+<span>25%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[25%] rounded-full shadow-[0_0_8px_rgba(0,243,255,0.4)]"></div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-white/5 hover:border-secondary/50 transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-secondary" data-icon="corporate_fare">corporate_fare</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="more_vert">more_vert</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-xs">Visual Interaction Specialist</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Flipkart • Bangalore</p>
+<div class="space-y-sm">
+<div class="flex justify-between text-[11px] font-bold text-secondary uppercase tracking-tighter">
+<span>Status: Applied</span>
+<span>10%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[10%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Interviewing -->
+<div class="kanban-column flex flex-col gap-md">
+<div class="flex items-center justify-between px-sm">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-6 bg-primary rounded-full shadow-[0_0_8px_rgba(255,45,120,0.6)]"></span>
+<h4 class="font-label-md text-label-md uppercase tracking-wider text-primary">Interviewing</h4>
+<span class="bg-surface-container-high px-2 py-0.5 rounded text-xs font-bold text-on-surface">3</span>
+</div>
+</div>
+<!-- Card Interview 1 -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-primary/30 hover:border-primary transition-all group cursor-pointer relative overflow-hidden shadow-[0_0_15px_rgba(255,45,120,0.1)]">
+<div class="absolute top-0 right-0 p-2">
+<span class="flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+</div>
+<div class="flex justify-between items-start mb-sm">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center overflow-hidden border border-primary/20">
+<img class="w-full h-full object-cover" data-alt="Fintech logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeCrbyj6lgWOuOM17p3DSeC0sxrylKenqjyAu9_0bLB8lBDuh7B_p67jKzd6Mq53li9kqFdxh9KrBOngUwg9Xc3pZTW5VsErmnFEp6gjp4Xc3whqloy8zQL-dIy-FeaiO_bEP3lZRAb8NG8qUiowhlpbdz5ucT7G2KRn8DSKkV9-p_WHfHxq9dDSYifZmaGAzOtHOJAhyaC7mrvm8wpaNrFvlHEb0DEY_2ys1kTAE2VAiA9WgcnviwZHQuUV76Jz9chKnCNLVWhIk"/>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="more_vert">more_vert</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-xs">Staff Design Lead</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">PhonePe • Mumbai</p>
+<div class="bg-primary/10 p-sm rounded-lg mb-md flex items-center gap-sm border border-primary/20">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="calendar_today">calendar_today</span>
+<span class="text-[12px] font-bold text-primary neon-text-pink">Round 2: Tomorrow, 10 AM</span>
+</div>
+<div class="space-y-sm">
+<div class="flex justify-between text-[11px] font-bold text-primary uppercase tracking-tighter">
+<span>Status: In-Progress</span>
+<span>65%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%] rounded-full shadow-[0_0_8px_rgba(255,45,120,0.4)]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Offered -->
+<div class="kanban-column flex flex-col gap-md">
+<div class="flex items-center justify-between px-sm">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-6 bg-secondary rounded-full shadow-[0_0_10px_rgba(0,243,255,0.6)]"></span>
+<h4 class="font-label-md text-label-md uppercase tracking-wider text-secondary">Offered</h4>
+<span class="bg-surface-container-high px-2 py-0.5 rounded text-xs font-bold text-on-surface">1</span>
+</div>
+</div>
+<!-- Card Offered 1 -->
+<div class="bg-secondary/5 p-md rounded-xl border border-secondary/30 border-dashed hover:border-secondary hover:bg-secondary/10 transition-all group cursor-pointer shadow-[0_0_20px_rgba(0,243,255,0.05)]">
+<div class="flex justify-between items-start mb-sm">
+<div class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center shadow-[0_0_10px_rgba(0,243,255,0.4)]">
+<span class="material-symbols-outlined text-background" data-icon="celebration" style="font-variation-settings: 'FILL' 1;">celebration</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="more_vert">more_vert</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-xs">Principal Experience Designer</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Zomato • Gurgaon</p>
+<div class="space-y-sm">
+<div class="flex justify-between text-[11px] font-bold text-secondary uppercase tracking-tighter">
+<span>Decision Pending</span>
+<span>95%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[95%] rounded-full shadow-[0_0_8px_rgba(0,243,255,0.4)]"></div>
+</div>
+</div>
+<button class="mt-md w-full bg-secondary text-background py-sm rounded-lg text-xs font-bold uppercase tracking-widest active:scale-95 transition-all shadow-[0_0_10px_rgba(0,243,255,0.3)]">Review Offer</button>
+</div>
+</div>
+<!-- Column: Rejected -->
+<div class="kanban-column flex flex-col gap-md opacity-50 hover:opacity-100 transition-opacity">
+<div class="flex items-center justify-between px-sm">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-6 bg-on-surface-variant rounded-full"></span>
+<h4 class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Rejected</h4>
+<span class="bg-surface-container-high px-2 py-0.5 rounded text-xs font-bold text-on-surface-variant">4</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-white/5 group cursor-pointer grayscale">
+<h5 class="font-label-md text-label-md text-on-surface-variant mb-xs">Senior UX Researcher</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Adobe • Noida</p>
+<div class="flex items-center gap-xs text-[12px] text-error font-medium">
+<span class="material-symbols-outlined text-[14px]" data-icon="cancel">cancel</span>
+<span>Position Closed</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Insights Bento Grid -->
+<section class="mb-3xl">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-lg">AI Talent Insights</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Bento Item 1 -->
+<div class="md:col-span-2 glass-panel p-lg rounded-xl flex flex-col justify-between min-h-[200px] border-primary/20">
+<div>
+<span class="text-primary font-bold text-xs uppercase tracking-widest bg-primary/10 border border-primary/30 px-2 py-1 rounded">Market Snapshot</span>
+<h4 class="font-headline-md text-headline-md mt-sm text-on-surface">Your profile is in the top 5% of designers in Bangalore.</h4>
+</div>
+<div class="flex items-end gap-md">
+<div class="flex-grow">
+<div class="flex gap-2 items-end h-16">
+<div class="w-full bg-primary/10 border border-primary/20 rounded-t-sm h-1/2"></div>
+<div class="w-full bg-primary/20 border border-primary/30 rounded-t-sm h-3/4"></div>
+<div class="w-full bg-primary/40 border border-primary/40 rounded-t-sm h-2/3"></div>
+<div class="w-full bg-primary rounded-t-sm h-full shadow-[0_0_15px_rgba(255,45,120,0.5)]"></div>
+<div class="w-full bg-primary/30 border border-primary/40 rounded-t-sm h-4/5"></div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-headline-md font-bold text-primary neon-text-pink">₹32L - ₹48L</div>
+<div class="text-xs text-on-surface-variant uppercase font-bold">Estimated Market Value</div>
+</div>
+</div>
+</div>
+<!-- Bento Item 2 -->
+<div class="bg-primary p-lg rounded-xl text-on-background flex flex-col justify-between relative overflow-hidden group shadow-[0_0_25px_rgba(255,45,120,0.3)]">
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-20 rotate-12 group-hover:rotate-0 transition-transform duration-500" data-icon="psychology">psychology</span>
+<h4 class="font-label-md text-label-md uppercase font-bold tracking-wider">Skill Gap Analysis</h4>
+<p class="font-headline-md text-headline-md mb-md leading-tight">Learn 'Framer' to unlock 42 more high-paying roles.</p>
+<button class="bg-background text-primary px-md py-sm rounded-lg font-bold text-xs self-start active:scale-95 transition-all border border-primary/30">Explore Courses</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 backdrop-blur-md border-t border-primary/20 shadow-[0_-4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex justify-around items-center h-20 px-4 pb-safe">
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-[10px] uppercase tracking-tighter">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-[10px] uppercase tracking-tighter">Search</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary text-background rounded-2xl px-4 py-1 cursor-pointer active:scale-90 transition-all shadow-[0_0_15px_rgba(255,45,120,0.4)]">
+<span class="material-symbols-outlined" data-icon="view_kanban" style="font-variation-settings: 'FILL' 1;">view_kanban</span>
+<span class="font-label-sm text-[10px] uppercase font-bold tracking-tighter">Apps</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+<span class="font-label-sm text-[10px] uppercase tracking-tighter">Inbox</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-sm text-[10px] uppercase tracking-tighter">Profile</span>
+</div>
+</div>
+</nav>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-primary/10 w-full py-xl mb-24 md:mb-0">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter max-w-container-max mx-auto gap-md">
+<div class="flex flex-col items-center md:items-start gap-xs">
+<div class="text-label-md font-bold text-primary neon-text-pink">JobPulse India</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 JobPulse India. Retro-Futuristic Recruitment.</p>
+</div>
+<div class="flex gap-lg">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Resources</a>
+</div>
+</div>
+</footer>
+<script>
+    // Micro-interactions and effects
+    document.querySelectorAll('.kanban-column div[class*="bg-surface-container-lowest"]').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-4px)';
+            card.style.boxShadow = '0 10px 20px -5px rgba(255, 45, 120, 0.1)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0px)';
+            card.style.boxShadow = 'none';
+        });
+    });
+
+    // Add horizontal scroll with mouse wheel for the kanban on desktop
+    const scrollContainer = document.querySelector('.overflow-x-auto');
+    scrollContainer.addEventListener('wheel', (evt) => {
+        evt.preventDefault();
+        scrollContainer.scrollLeft += evt.deltaY;
+    });
+</script>
+</body></html>

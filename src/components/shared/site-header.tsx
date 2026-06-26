@@ -24,83 +24,86 @@ export function SiteHeader() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm shadow-slate-200/60 backdrop-blur-xl">
-      <div className="flex w-full items-center justify-between gap-5 px-4 py-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-white/8 bg-[rgba(10,9,19,0.9)] backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <Link href="/" className="flex min-w-0 items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,45,120,0.2),rgba(0,255,204,0.08))] text-primary shadow-[0_0_18px_rgba(255,45,120,0.22)]">
             <BriefcaseBusiness className="size-5" />
           </div>
-          <div>
-            <p className="font-heading text-base font-semibold leading-5 text-slate-950">{siteConfig.name}</p>
-            <p className="text-xs font-medium text-slate-500">Jobs, resumes, interviews</p>
+          <div className="min-w-0">
+            <p className="truncate font-heading text-lg font-semibold text-white">{siteConfig.name}</p>
+            <p className="truncate text-[11px] uppercase tracking-[0.22em] text-cyan-300">
+              Recruitment evolved. Powered by AI.
+            </p>
           </div>
         </Link>
-        <nav className="hidden items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 md:flex" aria-label="Primary navigation">
+
+        <nav
+          className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 lg:flex"
+          aria-label="Primary navigation"
+        >
           {primaryNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="group relative rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition-colors duration-200 hover:text-[#0284c7] before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-full before:origin-left before:scale-x-0 before:rounded-full before:bg-[#0284c7] before:transition-transform before:duration-200 before:content-[''] hover:before:scale-x-100"
+              className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/8 hover:text-white"
             >
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" className="hidden border-slate-300 text-slate-800 sm:inline-flex">
+
+        <div className="hidden items-center gap-2 sm:flex">
+          <Button asChild variant="ghost" className="text-slate-200">
             <Link href="/login">Login</Link>
           </Button>
-          <Button asChild className="hidden rounded-lg shadow-sm sm:inline-flex">
-            <Link href="/ai-career-agent">
+          <Button asChild>
+            <Link href="/signup">
               <Sparkles className="size-4" />
-              AI Agent
+              Join JobPulse
             </Link>
           </Button>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="md:hidden"
-                aria-label="Open navigation menu"
-              >
-                <Menu className="size-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[86vw] max-w-sm border-slate-200 bg-white">
-              <SheetHeader className="border-b border-slate-200">
-                <SheetTitle>Explore JobPulse India</SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-col gap-2 p-4">
-                {primaryNav.map((item) => (
-                  <SheetClose asChild key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-primary/30 hover:text-primary"
-                    >
-                      {item.label}
-                    </Link>
-                  </SheetClose>
-                ))}
-              </div>
-              <div className="mt-auto space-y-3 border-t border-slate-200 p-4">
-                <SheetClose asChild>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="/login">Login</Link>
-                  </Button>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Button asChild className="w-full">
-                    <Link href="/ai-career-agent">
-                      <Sparkles className="size-4" />
-                      AI Agent
-                    </Link>
-                  </Button>
-                </SheetClose>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open navigation menu">
+              <Menu className="size-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[88vw] max-w-sm border-white/10 bg-[#0f0d19] text-white">
+            <SheetHeader className="border-b border-white/8 pb-4">
+              <SheetTitle className="text-left font-heading text-xl text-white">JobPulse India</SheetTitle>
+            </SheetHeader>
+            <div className="flex flex-col gap-3 py-6">
+              {primaryNav.map((item) => (
+                <SheetClose asChild key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-cyan-400/40 hover:bg-white/8"
+                  >
+                    {item.label}
+                  </Link>
+                </SheetClose>
+              ))}
+            </div>
+            <div className="mt-auto space-y-3 border-t border-white/8 pt-5">
+              <SheetClose asChild>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/login">Login</Link>
+                </Button>
+              </SheetClose>
+              <SheetClose asChild>
+                <Button asChild className="w-full">
+                  <Link href="/signup">
+                    <Sparkles className="size-4" />
+                    Create account
+                  </Link>
+                </Button>
+              </SheetClose>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );

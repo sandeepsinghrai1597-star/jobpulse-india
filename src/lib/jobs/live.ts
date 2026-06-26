@@ -1,14 +1,187 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { getApprovedGovernmentJobs } from "@/lib/government-jobs/live";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { filterVisibleJobRows } from "@/lib/jobs/visibility";
-import type { Job } from "@/types";
+import type { GovernmentJob, Job } from "@/types";
 
 const NCS_HOME_URL = "https://www.ncs.gov.in/";
 export const PUBLIC_JOBS_REVALIDATE_SECONDS = 300;
 
 let publicReadClient: ReturnType<typeof createSupabaseClient> | null = null;
+
+function extractSalaryBounds(value: string | undefined) {
+  if (!value) {
+    return { min: 0, max: 0 };
+  }
+
+  const matches = value.match(/\d[\d,]*/g) ?? [];
+  const numbers = matches
+    .map((entry) => Number.parseInt(entry.replace(/,/g, ""), 10))
+    .filter((entry) => Number.isFinite(entry) && entry > 0);
+
+  if (numbers.length === 0) {
+    return { min: 0, max: 0 };
+  }
+
+  if (numbers.length === 1) {
+    return { min: numbers[0]!, max: numbers[0]! };
+  }
+
+  return {
+    min: Math.min(...numbers),
+    max: Math.max(...numbers),
+  };
+}
+
+function initialsFromName(value: string) {
+  return value
+    .split(" ")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function inferGovernmentJobType(job: GovernmentJob): Job["jobType"] {
+  const haystack = `${job.title} ${job.summary}`.toLowerCase();
+
+  if (/\b(apprentice|intern(ship)?)\b/.test(haystack)) {
+    return "internship";
+  }
+
+  if (/\b(walk[\s-]?in)\b/.test(haystack)) {
+    return "walk-in";
+  }
+
+  if (/\b(contract|outsource|temporary)\b/.test(haystack)) {
+    return "contract";
+  }
+
+  if (/\b(part time|part-time)\b/.test(haystack)) {
+    return "part-time";
+  }
+
+  return "full-time";
+}
+
+function inferGovernmentWorkMode(job: GovernmentJob): Job["workMode"] {
+  const haystack = `${job.title} ${job.summary}`.toLowerCase();
+
+  if (/\b(remote|online|work from home|wfh)\b/.test(haystack)) {
+    return "remote";
+  }
+
+  if (/\b(hybrid)\b/.test(haystack)) {
+    return "hybrid";
+  }
+
+  return "onsite";
+}
+
+function buildGovernmentJobSkills(job: GovernmentJob) {
+  return Array.from(
+    new Set(
+      [
+        "Government Job",
+        job.category,
+        job.categorySlug ? titleCase(job.categorySlug) : null,
+        job.state !== "All India" ? job.state : null,
+      ].filter((value): value is string => Boolean(value && value.trim())),
+    ),
+  );
+}
+
+function titleCase(value: string) {
+  return value
+    .split("-")
+    .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
+    .join(" ");
+}
+
+function governmentJobToPublicJob(job: GovernmentJob): Job {
+  const salary = extractSalaryBounds(job.salary);
+  const location = job.state === "All India" ? "All India, India" : `${job.state}, India`;
+  const companyName = job.department || "Government Department";
+  const nowIso = new Date().toISOString();
+
+  return {
+    id: job.id,
+    slug: job.slug,
+    categorySlug: job.categorySlug ?? "government-jobs",
+    title: job.title,
+    companyName,
+    companyLogo: initialsFromName(companyName) || "GO",
+    description: job.summary,
+    responsibilities: [
+      "Read the official notification carefully before applying.",
+      ...(job.importantDates?.slice(0, 2).map((entry) => `Important date: ${entry}`) ?? []),
+      ...(job.selectionProcess ? [`Selection process: ${job.selectionProcess}`] : []),
+    ],
+    requirements: [
+      `Eligibility: ${job.eligibility}`,
+      `Age limit: ${job.ageLimit}`,
+      ...(job.applicationFee ? [`Application fee: ${job.applicationFee}`] : []),
+    ],
+    skills: buildGovernmentJobSkills(job),
+    salaryMin: salary.min,
+    salaryMax: salary.max,
+    salaryType: "yearly",
+    location,
+    city: job.state,
+    state: job.state,
+    country: "India",
+    workMode: inferGovernmentWorkMode(job),
+    experienceRequired: "Check official notification",
+    educationRequired: job.eligibility,
+    jobType: inferGovernmentJobType(job),
+    industry: "Government",
+    openings: Number.parseInt(job.openings?.replace(/[^\d]/g, "") ?? "", 10) || 1,
+    applicationDeadline: job.lastDate,
+    recruiterContact: "",
+    applicationUrl:
+      job.applyLink ??
+      job.officialApplyUrl ??
+      job.officialUrl ??
+      job.officialNotificationLink ??
+      job.notificationUrl ??
+      job.sourceUrl ??
+      NCS_HOME_URL,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    status: "active",
+    featured: false,
+    noCandidatePayment: true,
+    salaryDisclosed: salary.max > 0,
+    governmentSourceVerified: true,
+    suspiciousFlags: [],
+    isSuspicious: false,
+    sourceUrl: job.sourceUrl ?? job.officialUrl ?? job.notificationUrl ?? undefined,
+    sourceType: "official",
+    sourceName: "JobPulse Government Import",
+    importedAt: nowIso,
+    officialVerified: true,
+    publishedAt: null,
+  };
+}
+
+function mergeJobs(primary: Job[], fallback: Job[]) {
+  const bySlug = new Map<string, Job>();
+
+  for (const job of primary) {
+    bySlug.set(job.slug, job);
+  }
+
+  for (const job of fallback) {
+    if (!bySlug.has(job.slug)) {
+      bySlug.set(job.slug, job);
+    }
+  }
+
+  return Array.from(bySlug.values());
+}
 
 function deriveUiCategorySlug(input: {
   title?: string;
@@ -526,9 +699,10 @@ async function getPublishedJobsClient() {
 
 const loadUnifiedJobs = unstable_cache(async () => {
   try {
+    const governmentJobs = (await getApprovedGovernmentJobs()).map(governmentJobToPublicJob);
     const client = await getPublishedJobsClient();
     if (!client) {
-      return [];
+      return governmentJobs;
     }
 
     const { data, error } = await client
@@ -541,13 +715,14 @@ const loadUnifiedJobs = unstable_cache(async () => {
       .order("created_at", { ascending: false });
 
     if (error || !data) {
-      return [];
+      return governmentJobs;
     }
 
-    return filterVisibleJobRows(data as unknown as SupabaseJobRow[]).map((row) => dbRowToJob(row));
+    const publishedJobs = filterVisibleJobRows(data as unknown as SupabaseJobRow[]).map((row) => dbRowToJob(row));
+    return mergeJobs(publishedJobs, governmentJobs);
   } catch (error) {
     console.error("Failed to load unified jobs", error);
-    return [];
+    return (await getApprovedGovernmentJobs()).map(governmentJobToPublicJob);
   }
 }, ["public-unified-jobs"], { revalidate: PUBLIC_JOBS_REVALIDATE_SECONDS });
 

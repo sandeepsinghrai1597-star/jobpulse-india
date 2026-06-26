@@ -140,6 +140,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         alreadyApplied: true,
         applied: true,
         message: "You already applied for this job.",
+        applicationUrl: persistedJob.job.applicationUrl,
       });
     }
 
@@ -166,5 +167,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     ok: true,
     applied: true,
     message: "Application submitted successfully.",
+    applicationUrl: persistedJob.job.applicationUrl,
   });
 }

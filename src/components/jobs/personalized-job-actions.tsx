@@ -10,11 +10,15 @@ import { Share2 } from "lucide-react";
 export function PersonalizedJobActions({
   jobId,
   jobSlug,
+  applicationUrl,
   whatsappShareUrl,
+  autoStartApply = false,
 }: {
   jobId: string;
   jobSlug: string;
+  applicationUrl: string;
   whatsappShareUrl: string;
+  autoStartApply?: boolean;
 }) {
   const { isLoading, isSignedIn, resumeOptions, stateByJobId } = useJobPersonalization();
   const interactionState = stateByJobId[jobId];
@@ -25,9 +29,11 @@ export function PersonalizedJobActions({
         <VerifiedApplyPanel
           jobIdentifier={jobSlug}
           jobSlug={jobSlug}
+          applicationUrl={applicationUrl}
           isSignedIn={isSignedIn}
           isInitiallyApplied={interactionState?.isApplied ?? false}
           resumeOptions={resumeOptions}
+          autoStartApply={autoStartApply}
         />
       </div>
 

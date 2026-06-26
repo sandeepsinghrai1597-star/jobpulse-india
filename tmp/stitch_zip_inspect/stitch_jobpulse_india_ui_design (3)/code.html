@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Employer Dashboard | JobPulse India - Neon Tokyo Edition</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --neon-primary: #ff2d78;
+            --neon-secondary: #00f3ff;
+            --neon-accent: #bc13fe;
+            --bg-dark: #0a0a0f;
+            --bg-panel: #12121e;
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 45, 120, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 40%);
+        }
+
+        .neon-border {
+            border: 1px solid rgba(255, 45, 120, 0.3);
+            box-shadow: 0 0 15px rgba(255, 45, 120, 0.1);
+        }
+
+        .neon-border-cyan {
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        .neon-text {
+            text-shadow: 0 0 8px rgba(255, 45, 120, 0.6);
+        }
+
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
+        }
+
+        .glass-panel {
+            background: rgba(18, 18, 30, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .kanban-applied { border-left: 4px solid var(--neon-primary); }
+        .kanban-interview { border-left: 4px solid var(--neon-secondary); }
+        .kanban-offered { border-left: 4px solid var(--neon-accent); }
+        
+        @keyframes pulse-neon {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--neon-secondary)); }
+            50% { opacity: 0.6; filter: drop-shadow(0 0 8px var(--neon-secondary)); }
+        }
+        .animate-pulse-neon { animation: pulse-neon 2s ease-in-out infinite; }
+
+        .chart-path {
+            filter: drop-shadow(0 0 6px var(--neon-primary));
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-primary);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "primary": "#ff2d78",
+                "secondary": "#00f3ff",
+                "tertiary": "#bc13fe",
+                "background": "#0a0a0f",
+                "surface": "#12121e",
+                "on-surface": "#e0e0e6",
+                "on-surface-variant": "#9494b8",
+                "outline-variant": "rgba(255, 255, 255, 0.1)"
+            },
+            "borderRadius": {
+                "DEFAULT": "4px",
+                "lg": "8px",
+                "xl": "12px",
+                "full": "9999px"
+            },
+            "spacing": {
+                "gutter": "24px",
+                "xs": "4px",
+                "sm": "8px",
+                "md": "16px",
+                "lg": "24px",
+                "xl": "32px",
+                "2xl": "48px",
+                "container-max": "1280px"
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl border-b border-white/5 shadow-2xl">
+<div class="flex justify-between items-center px-gutter h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform" data-icon="menu">menu</span>
+<h1 class="text-xl font-bold text-primary tracking-tight neon-text">JOBPULSE <span class="text-on-surface">INDIA</span></h1>
+</div>
+<nav class="hidden md:flex items-center gap-xl">
+<a class="text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors" href="#">Find Jobs</a>
+<a class="text-sm font-semibold text-primary neon-text" href="#">Dashboard</a>
+<a class="text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors" href="#">Messages</a>
+<a class="text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors" href="#">AI Insights</a>
+</nav>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-secondary" data-icon="notifications">notifications</span>
+<div class="w-10 h-10 rounded-lg border border-primary/30 overflow-hidden cursor-pointer active:scale-95 transition-transform">
+<img class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmqrot8sHtzsMZipv5iMuPAKo1Wxtx7Hr5eYIx64H0l9ZuKKxPfti-9k7oRl_iuAJYiuAuB0YhNZQbidv9F8ejC-OTR4wp1kDwYV6rp8D9kivizWzyF9nFO9QKw22hNXUSJJRFXRrLNxwM3n_nauzDw2Dk1hHzKUaRGw5sUNV-w2ORY5dSfi97qBcBxpBHgG5HKaqK-idAEzb4ZpnFKa-al_0MslLa8ULPBpx7l6meNxMewMTEhWvUuSpQs56Ebj5MmE3iblyRsYo"/>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-gutter max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Welcome Hero Section -->
+<section class="col-span-1 md:col-span-12 mb-md">
+<h2 class="text-3xl font-bold text-on-surface mb-xs tracking-tight">Recruit Strategy <span class="text-secondary neon-text-cyan">Dashboard</span></h2>
+<p class="text-on-surface-variant font-light tracking-wide">Live biometric recruitment analytics. All systems operational.</p>
+</section>
+<!-- KPI Grid -->
+<div class="col-span-1 md:col-span-3 glass-panel p-lg rounded-xl neon-border">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-xs uppercase tracking-widest text-on-surface-variant">Applicants</span>
+<span class="material-symbols-outlined text-primary" data-icon="groups">groups</span>
+</div>
+<div class="text-2xl font-bold tracking-tighter text-on-surface">1,284</div>
+<div class="text-[10px] text-secondary font-bold mt-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span> 12% VS PREV_NODE
+        </div>
+</div>
+<div class="col-span-1 md:col-span-3 glass-panel p-lg rounded-xl border border-white/5">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-xs uppercase tracking-widest text-on-surface-variant">Latency-to-Hire</span>
+<span class="material-symbols-outlined text-secondary" data-icon="timer">timer</span>
+</div>
+<div class="text-2xl font-bold tracking-tighter text-on-surface">18 DAYS</div>
+<div class="text-[10px] text-on-surface-variant mt-xs">TARGET_LMT: 21D</div>
+</div>
+<div class="col-span-1 md:col-span-3 glass-panel p-lg rounded-xl border border-white/5">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-xs uppercase tracking-widest text-on-surface-variant">Conversion_RT</span>
+<span class="material-symbols-outlined text-tertiary" data-icon="trending_up">trending_up</span>
+</div>
+<div class="text-2xl font-bold tracking-tighter text-on-surface">24.5%</div>
+<div class="text-[10px] text-tertiary font-bold mt-xs">STABLE_OS_LINK</div>
+</div>
+<div class="col-span-1 md:col-span-3 glass-panel p-lg rounded-xl border border-white/5">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-xs uppercase tracking-widest text-on-surface-variant">Acceptance_RT</span>
+<span class="material-symbols-outlined text-primary" data-icon="handshake">handshake</span>
+</div>
+<div class="text-2xl font-bold tracking-tighter text-on-surface">92%</div>
+<div class="text-[10px] text-on-surface-variant mt-xs">B_MARK: 88%</div>
+</div>
+<!-- Analytics Visualizations -->
+<div class="col-span-1 md:col-span-8 glass-panel p-lg rounded-xl border border-white/5 flex flex-col gap-md relative overflow-hidden">
+<div class="absolute top-0 right-0 p-lg opacity-5 pointer-events-none">
+<span class="text-6xl font-black">GRAPH_01</span>
+</div>
+<div class="flex items-center justify-between z-10">
+<h3 class="text-lg font-bold tracking-tight">Recruitment Velocity Trend</h3>
+<div class="flex gap-xs">
+<button class="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold rounded border border-primary/30 uppercase">30 Days</button>
+<button class="px-3 py-1 text-on-surface-variant text-[10px] font-bold rounded hover:bg-white/5 uppercase">90 Days</button>
+</div>
+</div>
+<div class="h-64 w-full relative flex items-end justify-between gap-md pt-xl">
+<svg class="absolute inset-0 w-full h-full pointer-events-none" viewbox="0 0 800 200">
+<defs>
+<lineargradient id="neonGrad" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:var(--neon-primary);stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:var(--neon-secondary);stop-opacity:1"></stop>
+</lineargradient>
+</defs>
+<path class="chart-path" d="M0,150 Q100,140 200,100 T400,80 T600,120 T800,90" fill="none" stroke="url(#neonGrad)" stroke-width="3"></path>
+</svg>
+<!-- Data Bars -->
+<div class="flex-1 flex flex-col justify-end items-center h-full group z-10">
+<div class="w-1.5 bg-primary/20 group-hover:bg-primary transition-all duration-300 rounded-t h-[40%]"></div>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant mt-sm">W1</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center h-full group z-10">
+<div class="w-1.5 bg-primary/20 group-hover:bg-primary transition-all duration-300 rounded-t h-[55%]"></div>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant mt-sm">W2</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center h-full group z-10">
+<div class="w-1.5 bg-primary/20 group-hover:bg-primary transition-all duration-300 rounded-t h-[45%]"></div>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant mt-sm">W3</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center h-full group z-10">
+<div class="w-1.5 bg-primary group-hover:bg-primary transition-all duration-300 rounded-t h-[70%]"></div>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant mt-sm">W4</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center h-full group z-10">
+<div class="w-1.5 bg-primary/20 group-hover:bg-primary transition-all duration-300 rounded-t h-[60%]"></div>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant mt-sm">W5</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center h-full group z-10">
+<div class="w-1.5 bg-secondary neon-border-cyan transition-all duration-300 rounded-t h-[85%]"></div>
+<span class="text-[9px] uppercase tracking-tighter text-secondary font-bold mt-sm">LIVE</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 md:col-span-4 glass-panel p-lg rounded-xl border border-white/5 flex flex-col">
+<h3 class="text-lg font-bold tracking-tight mb-md">GEO_DENSITY</h3>
+<div class="space-y-md flex-grow">
+<div class="space-y-xs">
+<div class="flex justify-between text-[11px] font-bold tracking-widest">
+<span>MUMBAI_NODE</span>
+<span class="text-primary neon-text">42%</span>
+</div>
+<div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 42%; box-shadow: 0 0 10px var(--neon-primary);"></div>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between text-[11px] font-bold tracking-widest">
+<span>BANGALORE_NODE</span>
+<span class="text-secondary neon-text-cyan">35%</span>
+</div>
+<div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 35%; box-shadow: 0 0 10px var(--neon-secondary);"></div>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between text-[11px] font-bold tracking-widest">
+<span>DELHI_NODE</span>
+<span class="text-tertiary">18%</span>
+</div>
+<div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary" style="width: 18%;"></div>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between text-[11px] font-bold tracking-widest text-on-surface-variant">
+<span>OTHER_NODES</span>
+<span>5%</span>
+</div>
+<div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+<div class="h-full bg-white/20" style="width: 5%;"></div>
+</div>
+</div>
+</div>
+<div class="mt-xl pt-md border-t border-white/5 flex justify-center">
+<button class="text-primary text-[10px] font-bold flex items-center gap-xs hover:neon-text transition-all uppercase tracking-widest">
+                Deploy Geo-Map <span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Active Job Postings -->
+<section class="col-span-1 md:col-span-12 mt-md">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="text-xl font-bold tracking-tighter uppercase">Active Stream Postings</h3>
+<button class="bg-primary hover:bg-primary/80 text-white px-lg py-2 rounded font-bold text-xs uppercase tracking-widest flex items-center gap-sm active:scale-95 transition-all neon-border">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Broadcast
+            </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Job Card 1 -->
+<div class="glass-panel p-lg rounded-xl border border-white/5 hover:neon-border transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors tracking-tight">Senior UI Designer</h4>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Design • Bangalore • Remote</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="more_vert">more_vert</span>
+</div>
+<div class="flex items-center gap-lg mt-md">
+<div>
+<div class="text-xl font-bold text-on-surface">142</div>
+<div class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Applicants</div>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<div>
+<div class="text-xl font-bold text-secondary">8</div>
+<div class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Interviews</div>
+</div>
+</div>
+<div class="mt-lg flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse-neon"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Broadcasting</span>
+</div>
+</div>
+<!-- Job Card 2 -->
+<div class="glass-panel p-lg rounded-xl border border-white/5 hover:neon-border-cyan transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h4 class="font-bold text-on-surface group-hover:text-secondary transition-colors tracking-tight">Backend Engineer</h4>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Engineering • Mumbai</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="more_vert">more_vert</span>
+</div>
+<div class="flex items-center gap-lg mt-md">
+<div>
+<div class="text-xl font-bold text-on-surface">86</div>
+<div class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Applicants</div>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<div>
+<div class="text-xl font-bold text-primary">12</div>
+<div class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Interviews</div>
+</div>
+</div>
+<div class="mt-lg flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse-neon"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Broadcasting</span>
+</div>
+</div>
+<!-- Job Card 3 -->
+<div class="glass-panel p-lg rounded-xl border border-white/5 hover:neon-border transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h4 class="font-bold text-on-surface group-hover:text-tertiary transition-colors tracking-tight">Product Manager</h4>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Product • Delhi NCR</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="more_vert">more_vert</span>
+</div>
+<div class="flex items-center gap-lg mt-md">
+<div>
+<div class="text-xl font-bold text-on-surface">210</div>
+<div class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Applicants</div>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<div>
+<div class="text-xl font-bold text-on-surface">4</div>
+<div class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Interviews</div>
+</div>
+</div>
+<div class="mt-lg flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse-neon"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Broadcasting</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Applicants & Pipeline -->
+<section class="col-span-1 md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-lg mt-md">
+<div class="col-span-1 md:col-span-2">
+<div class="flex justify-between items-center mb-md">
+<h3 class="text-xl font-bold tracking-tighter uppercase">High Probability Matches</h3>
+<button class="text-primary text-[10px] font-bold uppercase tracking-widest hover:neon-text">View Global</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Applicant Card 1 -->
+<div class="glass-panel p-md rounded-xl border border-white/5 flex gap-md items-center">
+<div class="w-14 h-14 rounded border border-primary/20 overflow-hidden shrink-0">
+<img class="w-full h-full object-cover grayscale opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLn2ypIwaIiTKzVaeacS_fZ9YGmOkZPGZzYdgHnmsxY9rlhuzuZK7nb3q_py_CgumHYivJIfjWGbj1U2epoRvPsij5OrBGRXtNZBb5HMz2tbKpXjvCLDCDl009XtEvmamyoNf_L1VDnjT4pDBSX_7vyENEg0kLgpJqqWkjRKiiR4BuzKPTq7zlpYGVlJg3h0SbJO1Wn6o1MfFdyF9__rauj-NTUwfphfbx1vGgVEi3cFiAJhELJVqo3PfvWQj1UitqPOoJCpOjNO4"/>
+</div>
+<div class="flex-grow min-w-0">
+<h5 class="text-sm font-bold text-on-surface truncate">Arjun Mehta</h5>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest truncate">Full Stack Developer</p>
+<div class="mt-xs inline-flex items-center px-2 py-[1px] bg-primary/10 text-primary text-[9px] font-black rounded border border-primary/20 tracking-tighter uppercase">
+                            AI_MATCH: 98%
+                        </div>
+</div>
+<div class="shrink-0 flex flex-col gap-xs">
+<button class="p-1.5 hover:bg-white/5 rounded text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="chat_bubble">chat_bubble</span>
+</button>
+<button class="p-1.5 hover:bg-white/5 rounded text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+</div>
+<!-- Applicant Card 2 -->
+<div class="glass-panel p-md rounded-xl border border-white/5 flex gap-md items-center">
+<div class="w-14 h-14 rounded border border-primary/20 overflow-hidden shrink-0">
+<img class="w-full h-full object-cover grayscale opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAORnFdUDLwZ82L5yW77zoq2MZsWmhdK6c9PeaJjFOEuEGr3VapxhOWk0cBQoOHBOlYP5Hm710aQjntNxyPgsFGjw7ouY5JsCoMd486bxzLtlFhdeCAxhLoYGxvFsH8rqQ0QJXgPy5HTss8CfxgNdQr29CqZe06J8CMwZSlnKqO_ZvcLuZEGV6tAEDh62_UJqyTRGtLkoXL9KESH2mSh8tVSFperatxDZ6LCZ6oA-AqeIYdTVgWSDmRG7Mlvc4GSBKtqj6f0xNDTXk"/>
+</div>
+<div class="flex-grow min-w-0">
+<h5 class="text-sm font-bold text-on-surface truncate">Priya Sharma</h5>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest truncate">Lead UX Designer</p>
+<div class="mt-xs inline-flex items-center px-2 py-[1px] bg-secondary/10 text-secondary text-[9px] font-black rounded border border-secondary/20 tracking-tighter uppercase">
+                            AI_MATCH: 96%
+                        </div>
+</div>
+<div class="shrink-0 flex flex-col gap-xs">
+<button class="p-1.5 hover:bg-white/5 rounded text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="chat_bubble">chat_bubble</span>
+</button>
+<button class="p-1.5 hover:bg-white/5 rounded text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-1">
+<h3 class="text-xl font-bold tracking-tighter uppercase mb-md">Pipeline Status</h3>
+<div class="space-y-sm">
+<div class="glass-panel p-md rounded-lg kanban-applied flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors">
+<div>
+<span class="text-[11px] font-bold uppercase tracking-widest block text-on-surface">New Applicants</span>
+<span class="text-[10px] text-on-surface-variant">42_NODES_ACTIVE</span>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="glass-panel p-md rounded-lg kanban-interview flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors">
+<div>
+<span class="text-[11px] font-bold uppercase tracking-widest block text-on-surface">Interviewing</span>
+<span class="text-[10px] text-on-surface-variant">18_SCHEDULED</span>
+</div>
+<span class="material-symbols-outlined text-secondary" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="glass-panel p-md rounded-lg kanban-offered flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors">
+<div>
+<span class="text-[11px] font-bold uppercase tracking-widest block text-on-surface">Offer Stage</span>
+<span class="text-[10px] text-on-surface-variant">04_PENDING_ACK</span>
+</div>
+<span class="material-symbols-outlined text-tertiary" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="w-full py-xl bg-surface/40 border-t border-white/5">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter max-w-container-max mx-auto gap-md">
+<div class="text-sm font-black text-primary tracking-tighter uppercase">JobPulse India <span class="text-white/20">v2.0.4</span></div>
+<div class="flex gap-lg">
+<a class="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+<a class="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+<a class="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+</div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-secondary">© 2024 NEON_TOKYO_CORP. ALL RIGHTS RESERVED.</p>
+</div>
+</footer>
+<!-- Mobile Navigation Bar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface/80 backdrop-blur-md border-t border-white/5 shadow-2xl">
+<div class="flex justify-around items-center h-20 px-4 pb-safe">
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[8px] font-bold uppercase tracking-tighter">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary neon-text">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[8px] font-bold uppercase tracking-tighter">Stats</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-secondary">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+<span class="text-[8px] font-bold uppercase tracking-tighter">Inbox</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<div class="w-6 h-6 rounded-sm border border-white/20 overflow-hidden grayscale">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmqrot8sHtzsMZipv5iMuPAKo1Wxtx7Hr5eYIx64H0l9ZuKKxPfti-9k7oRl_iuAJYiuAuB0YhNZQbidv9F8ejC-OTR4wp1kDwYV6rp8D9kivizWzyF9nFO9QKw22hNXUSJJRFXRrLNxwM3n_nauzDw2Dk1hHzKUaRGw5sUNV-w2ORY5dSfi97qBcBxpBHgG5HKaqK-idAEzb4ZpnFKa-al_0MslLa8ULPBpx7l6meNxMewMTEhWvUuSpQs56Ebj5MmE3iblyRsYo"/>
+</div>
+<span class="text-[8px] font-bold uppercase tracking-tighter mt-1">Profile</span>
+</div>
+</div>
+</nav>
+<script>
+    // Micro-interactions
+    document.querySelectorAll('.active\\:scale-95').forEach(button => {
+        button.addEventListener('mousedown', () => {
+            button.style.transform = 'scale(0.95)';
+        });
+        button.addEventListener('mouseup', () => {
+            button.style.transform = 'scale(1)';
+        });
+    });
+
+    // Bar animation on load
+    window.addEventListener('DOMContentLoaded', () => {
+        const bars = document.querySelectorAll('.group div');
+        bars.forEach((bar, index) => {
+            const targetHeight = bar.style.height;
+            bar.style.height = '0%';
+            setTimeout(() => {
+                bar.style.transition = 'height 1.2s cubic-bezier(0.19, 1, 0.22, 1)';
+                bar.style.height = targetHeight;
+            }, 150 * index);
+        });
+    });
+</script>
+</body></html>

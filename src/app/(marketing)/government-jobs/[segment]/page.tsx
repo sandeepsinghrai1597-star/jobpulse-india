@@ -14,6 +14,81 @@ import {
 import { SchemaScript } from "@/components/shared/schema-script";
 import { Card, CardContent } from "@/components/ui/card";
 
+function DetailGrid({
+  items,
+}: {
+  items: Array<{ label: string; value: string }> | undefined;
+}) {
+  if (!items?.length) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+      <div className="grid divide-y divide-slate-200">
+        {items.map((item) => (
+          <div key={`${item.label}-${item.value}`} className="grid gap-2 px-5 py-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-4">
+            <p className="text-sm font-semibold text-slate-950">{item.label}</p>
+            <p className="text-sm leading-6 text-slate-600">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BulletSections({
+  sections,
+}: {
+  sections: Array<{ title: string; bullets: string[] }> | undefined;
+}) {
+  if (!sections?.length) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      {sections.map((section) => (
+        <div key={section.title} className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+          <h3 className="text-lg font-semibold text-slate-950">{section.title}</h3>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+            {section.bullets.map((bullet) => (
+              <li key={`${section.title}-${bullet}`}>- {bullet}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LinkList({
+  links,
+}: {
+  links: Array<{ label: string; href: string }> | undefined;
+}) {
+  if (!links?.length) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3">
+      {links.map((link) => (
+        <a
+          key={`${link.label}-${link.href}`}
+          href={link.href}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-primary hover:text-primary"
+        >
+          <span>{link.label}</span>
+          <span>Open</span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export async function generateStaticParams() {
   const segments = await getGovernmentSegments();
   return segments.map((segment) => ({ segment }));
@@ -223,42 +298,103 @@ export default async function GovernmentJobsDynamicPage({
 
       <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr]">
         <div className="space-y-8">
-          <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur">
+          <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={`/government-jobs/${job.categorySlug}`}
-                className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary"
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary"
               >
                 {job.category}
               </Link>
-              <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted-foreground">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
                 {job.state}
               </span>
             </div>
-            <h1 className="mt-4 font-heading text-4xl font-semibold tracking-tight">{job.title}</h1>
-            <p className="mt-4 text-base leading-7 text-muted-foreground">{job.summary}</p>
+            <h1 className="mt-4 font-heading text-4xl font-semibold tracking-tight text-slate-950">{job.title}</h1>
+            <p className="mt-4 text-base leading-7 text-slate-600">{job.summary}</p>
+            {job.shortInformation ? (
+              <div className="mt-6 rounded-[1.5rem] border border-sky-200 bg-sky-50 p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">Short Information</p>
+                <p className="mt-2 text-sm leading-7 text-slate-700">{job.shortInformation}</p>
+              </div>
+            ) : null}
             <p className="mt-6 rounded-2xl border border-amber-300/40 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
               {governmentJobsDisclaimer}
             </p>
           </section>
 
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-slate-50 shadow-sm">
             <CardContent className="grid gap-4 p-8 sm:grid-cols-2">
-              <p><span className="font-semibold text-foreground">Department:</span> {job.department}</p>
-              <p><span className="font-semibold text-foreground">Category:</span> {job.category}</p>
-              <p><span className="font-semibold text-foreground">State:</span> {job.state}</p>
-              <p><span className="font-semibold text-foreground">Eligibility:</span> {job.eligibility}</p>
-              <p><span className="font-semibold text-foreground">Age limit:</span> {job.ageLimit}</p>
-              <p><span className="font-semibold text-foreground">Application fee:</span> {job.applicationFee}</p>
-              <p><span className="font-semibold text-foreground">Last date:</span> {job.lastDate}</p>
-              <p><span className="font-semibold text-foreground">Openings:</span> {job.openings}</p>
+              <p><span className="font-semibold text-slate-950">Department:</span> {job.department}</p>
+              <p><span className="font-semibold text-slate-950">Category:</span> {job.category}</p>
+              <p><span className="font-semibold text-slate-950">State:</span> {job.state}</p>
+              <p><span className="font-semibold text-slate-950">Eligibility:</span> {job.eligibility}</p>
+              <p><span className="font-semibold text-slate-950">Age limit:</span> {job.ageLimit}</p>
+              <p><span className="font-semibold text-slate-950">Application fee:</span> {job.applicationFee}</p>
+              <p><span className="font-semibold text-slate-950">Last date:</span> {job.lastDate}</p>
+              <p><span className="font-semibold text-slate-950">Openings:</span> {job.openings ?? "Check notification"}</p>
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-white shadow-sm">
             <CardContent className="space-y-8 p-8">
+              {job.overview?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Overview</h2>
+                  <DetailGrid items={job.overview} />
+                </section>
+              ) : null}
+
+              {(job.importantDates ?? []).length > 0 ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Important Dates</h2>
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                    <ul className="space-y-2 text-sm leading-6 text-slate-600">
+                      {(job.importantDates ?? []).map((item) => (
+                        <li key={item}>- {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
+              ) : null}
+
+              {job.feeDetails?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Application Fee</h2>
+                  <DetailGrid items={job.feeDetails} />
+                </section>
+              ) : null}
+
+              {job.ageDetails?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Age Limit</h2>
+                  <DetailGrid items={job.ageDetails} />
+                </section>
+              ) : null}
+
+              {job.vacancyDetails?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Vacancy Details</h2>
+                  <DetailGrid items={job.vacancyDetails} />
+                </section>
+              ) : null}
+
+              {job.educationDetails?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Educational Qualification</h2>
+                  <DetailGrid items={job.educationDetails} />
+                </section>
+              ) : null}
+
+              {job.salaryDetails?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Salary Structure</h2>
+                  <DetailGrid items={job.salaryDetails} />
+                </section>
+              ) : null}
+
               <section className="space-y-3">
-                <h2 className="font-heading text-2xl font-semibold">Official notification link</h2>
+                <h2 className="font-heading text-2xl font-semibold text-slate-950">Official Notification</h2>
                 {job.officialNotificationLink ? (
                   <a
                     href={job.officialNotificationLink}
@@ -269,67 +405,101 @@ export default async function GovernmentJobsDynamicPage({
                     Visit official notification
                   </a>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Verify the latest notification on the official website.</p>
+                  <p className="text-sm text-slate-500">Verify the latest notification on the official website.</p>
                 )}
               </section>
               <section className="space-y-3">
-                <h2 className="font-heading text-2xl font-semibold">Apply link</h2>
+                <h2 className="font-heading text-2xl font-semibold text-slate-950">Apply Link</h2>
                 {job.applyLink ? (
                   <a href={job.applyLink} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary">
                     Apply online
                   </a>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Use the official website to confirm whether an online application link is available.</p>
+                  <p className="text-sm text-slate-500">Use the official website to confirm whether an online application link is available.</p>
                 )}
               </section>
               {job.syllabus ? (
               <section className="space-y-3">
-                <h2 className="font-heading text-2xl font-semibold">Syllabus</h2>
-                <p className="leading-7 text-muted-foreground">{job.syllabus}</p>
+                <h2 className="font-heading text-2xl font-semibold text-slate-950">Syllabus</h2>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="leading-7 text-slate-600">{job.syllabus}</p>
+                </div>
               </section>
               ) : null}
               {job.selectionProcess ? (
               <section className="space-y-3">
-                <h2 className="font-heading text-2xl font-semibold">Selection process</h2>
-                <p className="leading-7 text-muted-foreground">{job.selectionProcess}</p>
+                <h2 className="font-heading text-2xl font-semibold text-slate-950">Selection Process</h2>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="leading-7 text-slate-600">{job.selectionProcess}</p>
+                </div>
               </section>
               ) : null}
-              {(job.importantDates ?? []).length > 0 ? (
-              <section className="space-y-3">
-                <h2 className="font-heading text-2xl font-semibold">Important dates</h2>
-                <ul className="space-y-2 text-muted-foreground">
-                  {(job.importantDates ?? []).map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </section>
+
+              {job.selectionSteps?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Selection Stages</h2>
+                  <BulletSections sections={job.selectionSteps} />
+                </section>
               ) : null}
+
+              {job.documentsRequired?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Documents Required</h2>
+                  <BulletSections sections={job.documentsRequired} />
+                </section>
+              ) : null}
+
+              {job.howToApplySteps?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">How To Apply</h2>
+                  <BulletSections sections={job.howToApplySteps} />
+                </section>
+              ) : null}
+
+              {job.importantLinks?.length ? (
+                <section className="space-y-4">
+                  <h2 className="font-heading text-2xl font-semibold text-slate-950">Important Links</h2>
+                  <LinkList links={job.importantLinks} />
+                </section>
+              ) : null}
+
               <section className="space-y-3">
-                <h2 className="font-heading text-2xl font-semibold">Why this page matters</h2>
-                <p className="leading-7 text-muted-foreground">
-                  This page groups official-link-first details so candidates can quickly review department, category, state, eligibility, age limit, fee, syllabus, selection process, and important dates before visiting the source website.
-                </p>
+                <h2 className="font-heading text-2xl font-semibold text-slate-950">Source Reference</h2>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="text-sm leading-6 text-slate-600">
+                    This page is reconstructed from the JobPulse source listing and official links so candidates can review the complete job information in one place before leaving the site.
+                  </p>
+                  {job.sourceUrl ? (
+                    <a href={job.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-primary">
+                      Open JobPulse source page
+                    </a>
+                  ) : null}
+                </div>
               </section>
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-white shadow-sm">
             <CardContent className="space-y-5 p-8">
-              <h2 className="font-heading text-2xl font-semibold">Frequently asked questions</h2>
-              {(job.faq ?? []).map((item) => (
-                <div key={item.question} className="space-y-2">
-                  <h3 className="font-semibold">{item.question}</h3>
-                  <p className="text-sm leading-6 text-muted-foreground">{item.answer}</p>
-                </div>
-              ))}
+              <h2 className="font-heading text-2xl font-semibold text-slate-950">Frequently Asked Questions</h2>
+              {(job.faq ?? []).length > 0 ? (
+                (job.faq ?? []).map((item) => (
+                  <div key={item.question} className="space-y-2 rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                    <h3 className="font-semibold text-slate-950">{item.question}</h3>
+                    <p className="text-sm leading-6 text-slate-600">{item.answer}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">Detailed FAQs will appear here when they are available from the source listing.</p>
+              )}
             </CardContent>
           </Card>
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-white shadow-sm">
             <CardContent className="space-y-4 p-6">
-              <h2 className="font-heading text-2xl font-semibold">Quick actions</h2>
+              <h2 className="font-heading text-2xl font-semibold text-slate-950">Quick Actions</h2>
               <div className="space-y-3 text-sm font-semibold">
                 <a href={job.officialNotificationLink ?? job.officialUrl ?? "#"} target="_blank" rel="noreferrer" className="block text-primary">
                   Open official notification
@@ -353,27 +523,27 @@ export default async function GovernmentJobsDynamicPage({
           </Card>
 
           {job.salary ? (
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-white shadow-sm">
             <CardContent className="space-y-4 p-6">
-              <h2 className="font-heading text-2xl font-semibold">Salary snapshot</h2>
-              <p className="text-sm leading-6 text-muted-foreground">{job.salary}</p>
+              <h2 className="font-heading text-2xl font-semibold text-slate-950">Salary Snapshot</h2>
+              <p className="text-sm leading-6 text-slate-600">{job.salary}</p>
             </CardContent>
           </Card>
           ) : null}
 
           {relatedJobs.length ? (
             <div className="space-y-4">
-              <h2 className="font-heading text-2xl font-semibold">Related internal links</h2>
+              <h2 className="font-heading text-2xl font-semibold text-slate-950">Related Government Jobs</h2>
               {relatedJobs.map((item) => (
-                <Card key={item.id} className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
+                <Card key={item.id} className="rounded-[1.75rem] border-slate-200 bg-white shadow-sm">
                   <CardContent className="space-y-3 p-5">
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
                         {item.category}
                       </p>
-                      <h3 className="mt-2 font-heading text-xl font-semibold">{item.title}</h3>
+                      <h3 className="mt-2 font-heading text-xl font-semibold text-slate-950">{item.title}</h3>
                     </div>
-                    <p className="text-sm leading-6 text-muted-foreground">{item.summary}</p>
+                    <p className="text-sm leading-6 text-slate-600">{item.summary}</p>
                     <Link href={`/government-jobs/${item.slug}`} className="text-sm font-semibold text-primary">
                       Read full details
                     </Link>

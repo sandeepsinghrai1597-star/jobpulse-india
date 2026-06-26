@@ -67,38 +67,38 @@ export function HeroSection({
 
   return (
     <div className="relative w-full">
-      <div className="w-full bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 py-3 text-center text-white">
-        <p className="text-sm font-medium">
+      <div className="w-full border-b border-white/8 bg-[linear-gradient(90deg,rgba(255,45,120,0.2),rgba(0,255,204,0.12))] py-3 text-center text-white">
+        <p className="text-sm font-medium text-slate-100">
           Search live jobs and use AI career tools to move from discovery to applications faster.
         </p>
       </div>
 
-      <section className="relative w-full overflow-hidden bg-white py-12 sm:py-16 lg:py-20">
+      <section className="relative w-full overflow-hidden py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div className="flex flex-col justify-center space-y-8">
               <Badge
                 variant="secondary"
-                className="w-fit rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700 shadow-sm hover:bg-blue-50"
+                className="w-fit rounded-full border border-white/10 bg-white/6 px-4 py-2 text-cyan-300 shadow-sm hover:bg-white/6"
               >
                 AI-powered job search for candidates across India
               </Badge>
 
               <div className="space-y-4">
-                <h1 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+                <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
                   Search jobs and get{" "}
-                  <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">
                     AI career support
                   </span>
                 </h1>
-                <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+                <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
                   Browse current openings, filter by role and city, and use built-in tools for
                   resumes, interviews, and career guidance.
                 </p>
               </div>
 
-              <div className="rounded-lg border-l-4 border-l-blue-600 bg-blue-50 p-4 sm:p-5">
-                <p className="font-medium text-blue-900">
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/5 p-4 sm:p-5">
+                <p className="font-medium text-slate-100">
                   Start with a broad search or leave both fields empty to explore every active job.
                 </p>
               </div>
@@ -107,7 +107,7 @@ export function HeroSection({
                 <Button
                   asChild
                   size="lg"
-                  className="rounded-lg bg-blue-600 px-8 font-semibold shadow-lg hover:bg-blue-700"
+                  className="px-8"
                 >
                   <Link href="/signup">Register Now</Link>
                 </Button>
@@ -115,7 +115,7 @@ export function HeroSection({
                   asChild
                   variant="outline"
                   size="lg"
-                  className="rounded-lg border-2 border-blue-600 bg-white px-8 font-semibold text-blue-600 hover:bg-blue-50"
+                  className="px-8"
                 >
                   <Link href="/jobs">
                     Explore Jobs
@@ -128,21 +128,21 @@ export function HeroSection({
             <div className="flex items-center justify-center">
               <div className="w-full space-y-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 shadow-sm">
-                    <p className="text-3xl font-bold text-emerald-700">{formatCount(stats.activeJobs)}</p>
-                    <p className="mt-2 text-sm font-medium text-emerald-600">Active job listings</p>
+                  <div className="jp-panel-soft p-6">
+                    <p className="text-3xl font-bold text-cyan-300">{formatCount(stats.activeJobs)}</p>
+                    <p className="mt-2 text-sm font-medium text-slate-300">Active job listings</p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm">
-                    <p className="text-3xl font-bold text-blue-700">{formatCount(stats.companies)}</p>
-                    <p className="mt-2 text-sm font-medium text-blue-600">Hiring companies</p>
+                  <div className="jp-panel-soft p-6">
+                    <p className="text-3xl font-bold text-primary">{formatCount(stats.companies)}</p>
+                    <p className="mt-2 text-sm font-medium text-slate-300">Hiring companies</p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-purple-50 to-purple-100 p-6 shadow-sm">
-                    <p className="text-3xl font-bold text-purple-700">{formatCount(stats.cities)}</p>
-                    <p className="mt-2 text-sm font-medium text-purple-600">Cities in current results</p>
+                  <div className="jp-panel-soft p-6">
+                    <p className="text-3xl font-bold text-white">{formatCount(stats.cities)}</p>
+                    <p className="mt-2 text-sm font-medium text-slate-300">Cities in current results</p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-orange-50 to-orange-100 p-6 shadow-sm">
-                    <p className="text-lg font-bold text-orange-700">Resume, interview, and AI guidance</p>
-                    <p className="mt-2 text-sm font-medium text-orange-600">Career tools that support every search</p>
+                  <div className="jp-panel-soft p-6">
+                    <p className="text-lg font-bold text-white">Resume, interview, and AI guidance</p>
+                    <p className="mt-2 text-sm font-medium text-slate-300">Career tools that support every search</p>
                   </div>
                 </div>
               </div>
@@ -151,13 +151,13 @@ export function HeroSection({
         </div>
       </section>
 
-      <section className="relative -mt-12 bg-slate-50 py-12 sm:py-16 lg:py-20">
+      <section className="relative -mt-4 py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
-            <h2 className="mb-2 text-center text-2xl font-bold text-slate-950 sm:text-3xl">
+          <div className="jp-panel p-6 sm:p-8">
+            <h2 className="mb-2 text-center text-2xl font-bold text-white sm:text-3xl">
               Find your next opportunity
             </h2>
-            <p className="mb-6 text-center text-sm text-slate-600">
+            <p className="mb-6 text-center text-sm text-slate-300">
               Search by role, company, or skill and narrow by city when you need local results.
             </p>
 
@@ -182,7 +182,7 @@ export function HeroSection({
                     placeholder="Job title, keyword, company, or skill"
                     aria-invalid={errors.keyword ? "true" : "false"}
                     aria-describedby={errors.keyword ? "hero-keyword-error" : undefined}
-                    className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-11 pr-4 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-2xl border border-white/10 bg-white/4 py-3 pl-11 pr-4 text-white placeholder:text-slate-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                   {errors.keyword ? (
                     <p id="hero-keyword-error" className="mt-2 text-sm text-red-600">
@@ -209,7 +209,7 @@ export function HeroSection({
                     placeholder="City or remote"
                     aria-invalid={errors.city ? "true" : "false"}
                     aria-describedby={errors.city ? "hero-city-error" : undefined}
-                    className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-11 pr-4 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-2xl border border-white/10 bg-white/4 py-3 pl-11 pr-4 text-white placeholder:text-slate-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                   {errors.city ? (
                     <p id="hero-city-error" className="mt-2 text-sm text-red-600">
@@ -223,7 +223,7 @@ export function HeroSection({
                 <Button
                   type="submit"
                   size="lg"
-                  className="flex-1 rounded-lg bg-blue-600 font-semibold shadow-md hover:bg-blue-700"
+                  className="flex-1"
                 >
                   <Search className="mr-2 size-4" />
                   Find Jobs
@@ -232,7 +232,7 @@ export function HeroSection({
                   asChild
                   variant="outline"
                   size="lg"
-                  className="flex-1 rounded-lg border-2 border-blue-600 bg-white font-semibold text-blue-600 hover:bg-blue-50"
+                  className="flex-1"
                 >
                   <Link href="/ai-career-agent">
                     <Brain className="mr-2 size-4" />
@@ -241,7 +241,7 @@ export function HeroSection({
                 </Button>
               </div>
 
-              <p className="text-sm text-slate-500" aria-live="polite">
+              <p className="text-sm text-slate-400" aria-live="polite">
                 Leave either field blank to keep the search broad.
               </p>
             </form>

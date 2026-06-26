@@ -148,6 +148,47 @@ export interface GovernmentJob {
   summary: string;
   openings?: string;
   salary?: string;
+  shortInformation?: string;
+  overview?: Array<{
+    label: string;
+    value: string;
+  }>;
+  vacancyDetails?: Array<{
+    label: string;
+    value: string;
+  }>;
+  educationDetails?: Array<{
+    label: string;
+    value: string;
+  }>;
+  ageDetails?: Array<{
+    label: string;
+    value: string;
+  }>;
+  feeDetails?: Array<{
+    label: string;
+    value: string;
+  }>;
+  salaryDetails?: Array<{
+    label: string;
+    value: string;
+  }>;
+  selectionSteps?: Array<{
+    title: string;
+    bullets: string[];
+  }>;
+  documentsRequired?: Array<{
+    title: string;
+    bullets: string[];
+  }>;
+  howToApplySteps?: Array<{
+    title: string;
+    bullets: string[];
+  }>;
+  importantLinks?: Array<{
+    label: string;
+    href: string;
+  }>;
   faq?: Array<{
     question: string;
     answer: string;

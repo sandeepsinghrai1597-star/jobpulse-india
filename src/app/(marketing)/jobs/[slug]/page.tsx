@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -129,12 +129,19 @@ function isUuid(value: string) {
 
 export default async function JobDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const query = await searchParams;
   const job = await getUnifiedJob(slug);
   if (!job) notFound();
+  if (job.sourceType === "official" && job.sourceUrl?.includes("jobpulse.in")) {
+    redirect(`/government-jobs/${job.slug}`);
+  }
+  const autoStartApply = query.apply === "1";
 
   const admin = getSupabaseAdminClient();
   let trustProfile: {
@@ -277,7 +284,9 @@ export default async function JobDetailPage({
               <PersonalizedJobActions
                 jobId={job.id}
                 jobSlug={job.slug}
+                applicationUrl={job.applicationUrl}
                 whatsappShareUrl={whatsappShareUrl}
+                autoStartApply={autoStartApply}
               />
             </div>
 

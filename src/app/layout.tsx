@@ -21,6 +21,13 @@ export const metadata: Metadata = {
     "resume builder",
     "resume analyzer",
     "government jobs",
+    "fresher jobs india",
+    "remote jobs india",
+    "internships india",
+    "interview preparation",
+    "job search india",
+    "salary calculator india",
+    "career guidance",
   ],
   robots: {
     index: true,
@@ -50,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark h-full">
+    <html lang="en-IN" className="dark h-full">
       <body className="min-h-full bg-background font-sans text-foreground antialiased">
         <SchemaScript data={buildOrganizationSchema()} />
         <SchemaScript data={buildWebsiteSchema()} />

@@ -6,7 +6,6 @@ import {
   Bot,
   Briefcase,
   CalendarCheck,
-  CheckCircle2,
   ChevronRight,
   ClipboardList,
   FileText,
@@ -36,7 +35,6 @@ import type { Job } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 export const metadata = buildMetadata({
   title: "Candidate Dashboard",
@@ -106,15 +104,6 @@ const applicationStatuses = [
   "rejected",
   "offered",
 ] as const;
-
-const statusStyles: Record<(typeof applicationStatuses)[number], string> = {
-  applied: "border-sky-200 bg-sky-50 text-sky-700",
-  viewed: "border-violet-200 bg-violet-50 text-violet-700",
-  shortlisted: "border-amber-200 bg-amber-50 text-amber-700",
-  interview: "border-cyan-200 bg-cyan-50 text-cyan-700",
-  rejected: "border-rose-200 bg-rose-50 text-rose-700",
-  offered: "border-emerald-200 bg-emerald-50 text-emerald-700",
-};
 
 type ApplicationStatus = (typeof applicationStatuses)[number];
 
@@ -189,13 +178,13 @@ function EmptyState({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="flex min-h-44 flex-col items-start justify-center gap-4 rounded-[1.5rem] border border-dashed border-slate-300 bg-[linear-gradient(180deg,#fbfdff_0%,#f8fafc_100%)] p-6">
-      <div className="flex size-10 items-center justify-center rounded-2xl bg-sky-50 text-primary">
+    <div className="flex min-h-44 flex-col items-start justify-center gap-4 rounded-[1.5rem] border border-dashed border-white/10 bg-white/4 p-6">
+      <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
         <Icon className="size-4" />
       </div>
       <div className="space-y-1">
-        <p className="font-semibold text-slate-900">{title}</p>
-        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+        <p className="font-semibold text-white">{title}</p>
+        <p className="text-sm leading-6 text-slate-400">{description}</p>
       </div>
       {action ? (
         <Button asChild variant="outline" size="sm" className="rounded-xl">
@@ -221,14 +210,14 @@ function SectionCard({
 }) {
   return (
     <Card
-      className={`rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5 backdrop-blur ${className}`}
+      className={`rounded-[1.75rem] border border-white/8 bg-[linear-gradient(180deg,rgba(18,16,29,0.96),rgba(12,11,22,0.94))] shadow-[0_18px_50px_-28px_rgba(255,45,120,0.24)] backdrop-blur ${className}`}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-primary">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
             <Icon className="size-4" />
           </div>
-          <CardTitle className="truncate text-lg text-slate-950">{title}</CardTitle>
+          <CardTitle className="truncate text-lg text-white">{title}</CardTitle>
         </div>
         {action ? (
           <Button asChild variant="ghost" size="sm" className="shrink-0 rounded-xl">
@@ -256,11 +245,11 @@ function CompactJobCard({
   showSaveAction?: boolean;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-sm transition hover:border-sky-200 hover:shadow-md">
+    <div className="rounded-[1.5rem] border border-white/8 bg-white/4 p-4 shadow-sm transition hover:border-cyan-400/25 hover:shadow-[0_12px_28px_-22px_rgba(0,255,204,0.28)]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="rounded-full border-slate-300 capitalize">
+            <Badge variant="outline" className="rounded-full capitalize">
               {job.workMode}
             </Badge>
             <Badge variant="secondary" className="rounded-full capitalize">
@@ -268,14 +257,14 @@ function CompactJobCard({
             </Badge>
           </div>
           <div className="space-y-1">
-            <h3 className="font-semibold text-slate-950">{job.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              {job.companyName} - {formatLocation(job)}
+            <h3 className="font-semibold text-white">{job.title}</h3>
+            <p className="text-sm text-slate-400">
+              {job.companyName} • {formatLocation(job)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {job.skills.slice(0, 3).map((skill) => (
-              <Badge key={skill} variant="outline" className="rounded-full border-slate-300">
+              <Badge key={skill} variant="outline" className="rounded-full">
                 {skill}
               </Badge>
             ))}
@@ -393,6 +382,16 @@ export default async function CandidateDashboardPage() {
     status,
     count: applications.filter((application) => application.status === status).length,
   }));
+  const profileTitle = profile.headline || profile.preferredRoles[0] || "Candidate";
+  const profileLocation = [profile.city, profile.state].filter(Boolean).join(", ") || "India";
+  const profileInitials =
+    profile.fullName
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "JP";
+  const featuredApplications = applications.slice(0, 2);
 
   return (
     <DashboardShell
@@ -402,51 +401,184 @@ export default async function CandidateDashboardPage() {
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div className="space-y-6">
-          <SectionCard
-            title="Profile completion"
-            icon={CheckCircle2}
-            action={{ href: "/dashboard/profile", label: "Edit profile" }}
-          >
-            <div className="grid gap-5 lg:grid-cols-[1fr_220px]">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">Profile strength</span>
-                    <span className="font-semibold text-slate-950">{completion}%</span>
-                  </div>
-                  <Progress value={completion} className="h-2.5 rounded-full" />
-                </div>
-                <div className="grid gap-3 text-sm sm:grid-cols-2">
-                  <p className="rounded-2xl bg-slate-50 p-3.5 text-muted-foreground">
-                    Name <span className="block font-medium text-slate-800">{profile.fullName || "Add full name"}</span>
-                  </p>
-                  <p className="rounded-2xl bg-slate-50 p-3.5 text-muted-foreground">
-                    Location <span className="block font-medium text-slate-800">{[profile.city, profile.state].filter(Boolean).join(", ") || "Add location"}</span>
-                  </p>
-                  <p className="rounded-2xl bg-slate-50 p-3.5 text-muted-foreground">
-                    Skills <span className="block font-medium text-slate-800">{profile.skills.slice(0, 4).join(", ") || "Add skills"}</span>
-                  </p>
-                  <p className="rounded-2xl bg-slate-50 p-3.5 text-muted-foreground">
-                    Verification <span className="block font-medium text-slate-800">{titleCase(profile.verificationStatus)}</span>
-                  </p>
-                </div>
+          <section className="jp-panel overflow-hidden border-[rgba(255,45,120,0.35)] p-5 sm:p-6">
+            <div className="flex flex-col gap-5 text-center sm:text-left">
+              <div className="mx-auto flex size-24 items-center justify-center rounded-full border border-[rgba(255,45,120,0.4)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),rgba(255,45,120,0.12)_55%,rgba(10,9,19,0.7))] text-3xl font-bold text-white shadow-[0_0_30px_rgba(255,45,120,0.18)] sm:mx-0">
+                {profileInitials}
               </div>
-              <div className="flex flex-col justify-between gap-3 rounded-[1.5rem] border border-sky-100 bg-[linear-gradient(180deg,#f9fcff_0%,#f4f9ff_100%)] p-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Next best action</p>
-                  <p className="font-semibold text-slate-950">
-                    {profile.resumeUrl ? "Keep your profile fresh" : "Upload a resume"}
-                  </p>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <h2 className="font-heading text-3xl font-semibold text-white">
+                    {profile.fullName || "Complete your profile"}
+                  </h2>
+                  <Badge className="rounded-full">{profileTitle}</Badge>
                 </div>
-                <Button asChild className="rounded-xl">
+                <p className="mx-auto max-w-xl text-sm leading-7 text-slate-300 sm:mx-0">
+                  {profile.bio ||
+                    "AI-driven job seeker profile optimized for faster discovery, stronger applications, and recruiter-ready positioning across India."}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-200 sm:justify-start">
+                <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1">
+                  {profileLocation}
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/4 px-3 py-1">
+                  Open to {profile.preferredJobTypes[0] || "Remote"}
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-primary">
+                  {profile.verified ? "Premium Member" : titleCase(profile.verificationStatus)}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button asChild className="flex-1">
                   <Link href="/dashboard/profile">
                     <Pencil className="size-4" />
-                    Edit profile
+                    Edit Profile
                   </Link>
+                </Button>
+                <Button asChild variant="outline" className="flex-1">
+                  <Link href="/dashboard/resumes">View Resume</Link>
                 </Button>
               </div>
             </div>
-          </SectionCard>
+          </section>
+
+          <section className="jp-panel p-5 sm:p-6">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <h3 className="font-heading text-2xl font-semibold text-primary jp-neon-text">
+                  Application Pipeline
+                </h3>
+                <p className="mt-1 text-sm text-slate-300">
+                  Track your recruitment progress across {applications.length || 0} active applications.
+                </p>
+              </div>
+              <div className="text-right text-xs uppercase tracking-[0.18em] text-slate-500">
+                Sort by:
+                <div className="mt-1 text-cyan-300">Recent</div>
+              </div>
+            </div>
+
+            {featuredApplications.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {featuredApplications.map((application) => (
+                  <Link
+                    key={application.id}
+                    href={application.jobs?.slug ? `/jobs/${application.jobs.slug}` : "/dashboard/applications"}
+                    className="jp-panel-soft block border-white/8 p-4 transition hover:border-primary/35"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="font-semibold text-white">{application.jobs?.title ?? "Job unavailable"}</p>
+                        <p className="text-sm text-slate-400">
+                          {application.jobs?.company_name ?? "Unknown company"}
+                          {application.jobs?.city ? ` • ${application.jobs.city}` : ""}
+                        </p>
+                      </div>
+                      <Badge className="rounded-full">{titleCase(application.status)}</Badge>
+                    </div>
+                    <div className="mt-5 space-y-2">
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                        <span>Status: {titleCase(application.status)}</span>
+                        <span>
+                          {application.status === "offered"
+                            ? "100%"
+                            : application.status === "interview"
+                              ? "75%"
+                              : application.status === "shortlisted"
+                                ? "60%"
+                                : application.status === "viewed"
+                                  ? "35%"
+                                  : "20%"}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-white/8">
+                        <div
+                          className="h-2 rounded-full bg-[linear-gradient(90deg,#00ffcc,#ff2d78)]"
+                          style={{
+                            width:
+                              application.status === "offered"
+                                ? "100%"
+                                : application.status === "interview"
+                                  ? "75%"
+                                  : application.status === "shortlisted"
+                                    ? "60%"
+                                    : application.status === "viewed"
+                                      ? "35%"
+                                      : "20%",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={ClipboardList}
+                title="No applications yet"
+                description="Apply to roles from search or AI recommendations and your live pipeline will appear here."
+                action={{ href: "/jobs", label: "Start applying" }}
+              />
+            )}
+          </section>
+
+          <section className="space-y-5">
+            <div>
+              <h3 className="font-heading text-2xl font-semibold text-white">AI Talent Insights</h3>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="jp-panel p-5">
+                <Badge variant="outline" className="border-primary/35 text-primary">
+                  Market snapshot
+                </Badge>
+                <p className="mt-4 text-3xl font-semibold text-white">
+                  Your profile is at {Math.max(5, 100 - completion)}% readiness.
+                </p>
+                <div className="mt-5 flex items-end justify-between gap-4">
+                  <div className="flex items-end gap-2">
+                    {[32, 48, 42, 66, 54].map((value, index) => (
+                      <span
+                        key={value + index}
+                        className={cn(
+                          "w-4 rounded-t-md bg-primary/70",
+                          index === 3 ? "shadow-[0_0_18px_rgba(255,45,120,0.36)]" : "",
+                        )}
+                        style={{ height: `${value}px` }}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-semibold text-primary">
+                      {profile.expectedSalary || "₹6L - ₹18L"}
+                    </p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Estimated market value
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[1.75rem] bg-primary px-5 py-6 text-primary-foreground shadow-[0_0_36px_rgba(255,45,120,0.28)]">
+                <Badge variant="secondary" className="border-white/20 bg-black/20 text-white">
+                  Skill gap analysis
+                </Badge>
+                <p className="mt-4 text-3xl font-semibold">
+                  Learn one key skill to unlock stronger matches.
+                </p>
+                <p className="mt-3 text-sm leading-7 text-black/75">
+                  {careerAgentMissingContext.length > 0
+                    ? `Focus next on ${careerAgentMissingContext.slice(0, 2).join(" and ")} to increase your application quality.`
+                    : "Your profile already has strong context. Use the career agent to refine targeting and interview preparation."}
+                </p>
+                <Button asChild variant="secondary" className="mt-6 bg-black text-white hover:bg-black/85">
+                  <Link href="/learning-roadmap">Explore Courses</Link>
+                </Button>
+              </div>
+            </div>
+          </section>
 
           <SectionCard
             title="Recommended jobs"
@@ -498,62 +630,25 @@ export default async function CandidateDashboardPage() {
             </SectionCard>
 
             <SectionCard
-              title="Applied jobs"
-              icon={ClipboardList}
-              action={{ href: "/dashboard/applications", label: "Track all" }}
+              title="Application status"
+              icon={CalendarCheck}
+              action={{ href: "/dashboard/applications", label: "Open tracker" }}
             >
-              {applications.length > 0 ? (
-                <div className="space-y-3">
-                  {applications.slice(0, 3).map((application) => (
-                    <Link
-                      key={application.id}
-                      href={application.jobs?.slug ? `/jobs/${application.jobs.slug}` : "/dashboard/applications"}
-                      className="block rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 transition hover:border-slate-300 hover:shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
-                          <p className="truncate font-medium text-slate-950">
-                            {application.jobs?.title ?? "Job unavailable"}
-                          </p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {application.jobs?.company_name ?? "Unknown company"}
-                          </p>
-                        </div>
-                        <Badge className={statusStyles[application.status]}>
-                          {titleCase(application.status)}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={ClipboardList}
-                  title="No applications yet"
-                  description="Apply to matched jobs and your status timeline will appear here."
-                  action={{ href: "/jobs", label: "Start applying" }}
-                />
-              )}
+              <div className="grid gap-3">
+                {applicationsByStatus.map(({ status, count }) => (
+                  <div
+                    key={status}
+                    className="rounded-[1.25rem] border border-white/8 bg-white/4 px-4 py-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-200">{titleCase(status)}</p>
+                      <Badge className="rounded-full">{count === 1 ? "1 role" : `${count} roles`}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </SectionCard>
           </div>
-
-          <SectionCard
-            title="Application status"
-            icon={CalendarCheck}
-            action={{ href: "/dashboard/applications", label: "Open tracker" }}
-          >
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {applicationsByStatus.map(({ status, count }) => (
-                <div key={status} className="rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm">
-                  <p className="text-2xl font-semibold text-slate-950">{count}</p>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-slate-600">{titleCase(status)}</p>
-                    <Badge className={cn("rounded-full", statusStyles[status])}>{count === 1 ? "1 role" : `${count} roles`}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
         </div>
 
         <div className="space-y-6">

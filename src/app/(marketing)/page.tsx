@@ -2,6 +2,7 @@ import { HomePage } from "@/components/marketing/home-page";
 import { SchemaScript } from "@/components/shared/schema-script";
 import { getUnifiedJobs } from "@/lib/jobs/live";
 import { buildMetadata } from "@/lib/seo";
+import { siteConfig } from "@/lib/data/site";
 
 export const metadata = buildMetadata({
   title: "Find Jobs Faster With Your AI Career Assistant",
@@ -28,7 +29,7 @@ export default async function HomeRoute() {
           "@context": "https://schema.org",
           "@type": "Organization",
           name: "JobPulse India",
-          url: "https://jobpulseindia.in",
+          url: siteConfig.url,
           description:
             "India's AI Career Companion for Jobs, Resumes & Interviews.",
         }}

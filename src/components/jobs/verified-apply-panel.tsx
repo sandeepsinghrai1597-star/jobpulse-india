@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, FileUp, LockKeyhole } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,15 +33,19 @@ interface ResumeOption {
 export function VerifiedApplyPanel({
   jobIdentifier,
   jobSlug,
+  applicationUrl,
   isSignedIn,
   isInitiallyApplied = false,
   resumeOptions,
+  autoStartApply = false,
 }: {
   jobIdentifier: string;
   jobSlug: string;
+  applicationUrl: string;
   isSignedIn: boolean;
   isInitiallyApplied?: boolean;
   resumeOptions: ResumeOption[];
+  autoStartApply?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -56,9 +60,10 @@ export function VerifiedApplyPanel({
   const [uploadedResumeId, setUploadedResumeId] = useState<string>("");
   const [uploadedResumeLabel, setUploadedResumeLabel] = useState<string>("");
   const [coverLetter, setCoverLetter] = useState("");
+  const hasAutoOpenedRef = useRef(false);
 
   const needsUpload = selectedResumeId === "upload-new";
-  const loginRedirectTo = `/login?next=/jobs/${jobSlug}`;
+  const loginRedirectTo = `/login?next=${encodeURIComponent(`/jobs/${jobSlug}?apply=1`)}`;
   const canSubmit = useMemo(() => {
     if (isApplied || isApplying || isUploadingResume) {
       return false;
@@ -70,6 +75,15 @@ export function VerifiedApplyPanel({
 
     return Boolean(selectedResumeId);
   }, [isApplied, isApplying, isUploadingResume, needsUpload, selectedResumeId, uploadedResumeId]);
+
+  useEffect(() => {
+    if (!autoStartApply || !isSignedIn || isApplied || hasAutoOpenedRef.current) {
+      return;
+    }
+
+    hasAutoOpenedRef.current = true;
+    setOpen(true);
+  }, [autoStartApply, isApplied, isSignedIn]);
 
   async function handleResumeUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -135,6 +149,7 @@ export function VerifiedApplyPanel({
       message?: string;
       applied?: boolean;
       redirectTo?: string;
+      applicationUrl?: string;
     };
 
     if (!response.ok) {
@@ -153,6 +168,10 @@ export function VerifiedApplyPanel({
     setIsApplying(false);
     setOpen(false);
     router.refresh();
+
+    if (result.applicationUrl || applicationUrl) {
+      window.location.assign(result.applicationUrl ?? applicationUrl);
+    }
   }
 
   return (

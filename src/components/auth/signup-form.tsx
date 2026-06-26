@@ -21,6 +21,7 @@ export function SignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<AuthErrorState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,11 +59,13 @@ export function SignupForm() {
     const redirectPath = parsed.data.role === "employer" ? "/employer" : "/dashboard";
 
     try {
+      const callbackOrigin =
+        siteUrl && /^https?:\/\//i.test(siteUrl) ? siteUrl.replace(/\/$/, "") : window.location.origin;
       const { error: signUpError, data } = await supabase.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirectPath}`,
+          emailRedirectTo: `${callbackOrigin}/auth/callback?next=${redirectPath}`,
           data: {
             full_name: parsed.data.fullName,
             phone: parsed.data.phone,
