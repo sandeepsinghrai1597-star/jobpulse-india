@@ -36,28 +36,32 @@ export default async function ResumeBuilderPage() {
   }> = [];
 
   if (currentUser?.id) {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("resumes")
-      .select("id, title, template_key, updated_at")
-      .eq("user_id", currentUser.id)
-      .order("updated_at", { ascending: false })
-      .limit(8);
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("resumes")
+        .select("id, title, template_key, updated_at")
+        .eq("user_id", currentUser.id)
+        .order("updated_at", { ascending: false })
+        .limit(8);
 
-    initialSavedResumes =
-      data?.map((item) => ({
-        id: item.id,
-        title: item.title,
-        templateKey: (item.template_key ?? "fresher") as
-          | "fresher"
-          | "it"
-          | "sales"
-          | "banking"
-          | "government-job"
-          | "internship"
-          | "experienced-professional",
-        updatedAt: item.updated_at,
-      })) ?? [];
+      initialSavedResumes =
+        data?.map((item) => ({
+          id: item.id,
+          title: item.title,
+          templateKey: (item.template_key ?? "fresher") as
+            | "fresher"
+            | "it"
+            | "sales"
+            | "banking"
+            | "government-job"
+            | "internship"
+            | "experienced-professional",
+          updatedAt: item.updated_at,
+        })) ?? [];
+    } catch (error) {
+      console.error("[resume-builder] unable to load saved resumes", error);
+    }
   }
 
   return (

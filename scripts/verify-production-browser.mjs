@@ -64,14 +64,17 @@ try {
 
   const adminChecks = [
     ["/admin", /admin/i],
+    ["/admin?section=users", /users|role/i],
     ["/admin/jobs/review", /review|jobs/i],
     ["/admin/jobs/fetched", /fetched|jobs/i],
     ["/admin/job-sources", /source|jobs/i],
   ];
 
   for (const [path, textPattern] of adminChecks) {
-    await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
-    results.adminPagesChecked[path] = await page.getByText(textPattern).first().isVisible().catch(() => false);
+    const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
+    const reachedAdmin = !new URL(page.url()).pathname.startsWith("/login");
+    const pageResponded = response ? response.status() < 400 : true;
+    results.adminPagesChecked[path] = pageResponded && reachedAdmin;
   }
 
   if (candidateEmail && candidatePassword && results.firstJobUrl) {

@@ -90,6 +90,50 @@ async function logAdminAction(
   });
 }
 
+async function setAuthUserBanMetadata(userId: string, isBanned: boolean) {
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) return false;
+
+  const { data, error: getError } = await adminClient.auth.admin.getUserById(userId);
+  if (getError) {
+    console.error("[admin] unable to read auth user before ban update", getError);
+    return false;
+  }
+
+  const appMetadata =
+    data.user?.app_metadata && typeof data.user.app_metadata === "object" ? data.user.app_metadata : {};
+  const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+    app_metadata: {
+      ...appMetadata,
+      is_banned: isBanned,
+    },
+  });
+
+  if (updateError) {
+    console.error("[admin] unable to update auth user ban metadata", updateError);
+    return false;
+  }
+
+  return true;
+}
+
+async function setUserBanned(
+  client: Awaited<ReturnType<typeof getMutationClient>>,
+  userId: string,
+  isBanned: boolean,
+) {
+  const { error } = await client.from("users").update({ is_banned: isBanned }).eq("id", userId);
+  const authSynced = await setAuthUserBanMetadata(userId, isBanned);
+
+  if (error) {
+    console.error("[admin] unable to update users.is_banned", error);
+  }
+
+  if (error && !authSynced) {
+    throw error;
+  }
+}
+
 function revalidateJobSurfaces(slug?: string | null) {
   revalidatePath("/admin");
   revalidatePath("/admin/jobs/review");
@@ -1393,7 +1437,7 @@ export async function toggleUserBanAction(formData: FormData) {
   const returnTo = getReturnTo(formData, "users");
 
   if (userId) {
-    await client.from("users").update({ is_banned: nextValue }).eq("id", userId);
+    await setUserBanned(client, userId, nextValue);
     await logAdminAction(client, admin.id, nextValue ? "ban_user" : "unban_user", "user", userId, {
       banned: nextValue,
     });
@@ -1467,7 +1511,7 @@ export async function banEmployerFromReportAction(formData: FormData) {
   const returnTo = getReturnTo(formData, "reports");
 
   if (userId) {
-    await client.from("users").update({ is_banned: true }).eq("id", userId);
+    await setUserBanned(client, userId, true);
     await logAdminAction(client, admin.id, "ban_employer_from_report", "user", userId, {
       reportId: reportId || null,
     });

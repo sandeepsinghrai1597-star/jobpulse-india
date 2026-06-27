@@ -308,6 +308,42 @@ export type AdminAnalyticsSummary = {
 };
 
 const PAGE_SIZE = 10;
+const AUTH_USERS_PAGE_SIZE = 1000;
+const JOB_REVIEW_COLUMNS = [
+  "id",
+  "slug",
+  "title",
+  "company_name",
+  "city",
+  "state",
+  "salary_min",
+  "salary_max",
+  "salary_type",
+  "experience_required",
+  "experience_min",
+  "experience_max",
+  "source_url",
+  "application_url",
+  "created_at",
+  "status",
+  "approval_status",
+  "is_featured",
+  "is_verified",
+  "is_suspicious",
+  "suspicious_flags",
+  "expires_at",
+  "published_at",
+];
+
+type AuthAdminUser = {
+  id: string;
+  email?: string | null;
+  phone?: string | null;
+  created_at?: string | null;
+  last_sign_in_at?: string | null;
+  app_metadata?: Record<string, unknown> | null;
+  user_metadata?: Record<string, unknown> | null;
+};
 
 function parseValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -366,6 +402,103 @@ function buildPaginatedResult<T>(rows: T[] | null, total: number | null, page: n
     page,
     pageSize: PAGE_SIZE,
   };
+}
+
+function readMetadataString(metadata: Record<string, unknown> | null | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getAuthUserRole(user: AuthAdminUser): AdminUserRow["role"] {
+  const appRole = user.app_metadata?.role;
+  if (appRole === "admin" || appRole === "employer" || appRole === "candidate") {
+    return appRole;
+  }
+
+  const userRole = user.user_metadata?.role;
+  if (userRole === "employer" || userRole === "candidate") {
+    return userRole;
+  }
+
+  return "candidate";
+}
+
+function getAuthUserBanned(user: AuthAdminUser) {
+  return user.app_metadata?.is_banned === true || user.app_metadata?.banned === true;
+}
+
+function getMissingJobsColumn(error: { message?: string; details?: string; hint?: string } | null) {
+  if (!error) return "";
+  const text = [error.message, error.details, error.hint].filter(Boolean).join(" ");
+  return text.match(/column jobs\.([a-z_]+) does not exist/)?.[1] ?? "";
+}
+
+function mapAuthUserRow(user: AuthAdminUser): AdminUserRow {
+  const firstName = readMetadataString(user.user_metadata, "first_name");
+  const lastName = readMetadataString(user.user_metadata, "last_name");
+  const fullName =
+    readMetadataString(user.user_metadata, "name") ||
+    readMetadataString(user.user_metadata, "full_name") ||
+    [firstName, lastName].filter(Boolean).join(" ") ||
+    user.email ||
+    "Unknown user";
+
+  return {
+    id: user.id,
+    name: fullName,
+    email: user.email ?? "",
+    phone: (user.phone ?? readMetadataString(user.user_metadata, "phone")) || null,
+    role: getAuthUserRole(user),
+    is_banned: getAuthUserBanned(user),
+    created_at: user.created_at ?? new Date(0).toISOString(),
+    last_seen_at: user.last_sign_in_at ?? null,
+  };
+}
+
+async function getUsersPageFromAuth(state: AdminQueryState) {
+  const admin = getSupabaseAdminClient();
+  if (!admin) {
+    return buildPaginatedResult<AdminUserRow>([], 0, state.page);
+  }
+
+  const users: AuthAdminUser[] = [];
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: AUTH_USERS_PAGE_SIZE,
+    });
+
+    if (error) {
+      console.error("[admin] unable to list auth users", error);
+      break;
+    }
+
+    const batch = (data.users ?? []) as AuthAdminUser[];
+    users.push(...batch);
+
+    if (batch.length < AUTH_USERS_PAGE_SIZE) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  const query = state.q.toLowerCase();
+  const rows = users
+    .map(mapAuthUserRow)
+    .filter((user) => {
+      if (state.status === "banned" && !user.is_banned) return false;
+      if (["candidate", "employer", "admin"].includes(state.status) && user.role !== state.status) return false;
+      if (!query) return true;
+
+      return [user.name, user.email, user.phone ?? ""].some((value) => value.toLowerCase().includes(query));
+    })
+    .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
+
+  const start = (state.page - 1) * PAGE_SIZE;
+  return buildPaginatedResult(rows.slice(start, start + PAGE_SIZE), rows.length, state.page);
 }
 
 export const getAdminOverview = cache(async (): Promise<AdminOverview> => {
@@ -450,6 +583,11 @@ export async function getUsersPage(state: AdminQueryState) {
   }
 
   const result = await query.range(from, to);
+  if (result.error) {
+    console.warn("[admin] unable to load users table, falling back to auth users", result.error);
+    return getUsersPageFromAuth(state);
+  }
+
   return buildPaginatedResult(result.data as AdminUserRow[] | null, result.count, state.page);
 }
 
@@ -642,24 +780,40 @@ export async function getJobsReviewPage(input: {
   const client = await getDataClient();
   const page = input.page && input.page > 0 ? input.page : 1;
   const { from, to } = getRange(page);
-  let query = client
-    .from("jobs")
-    .select(
-      "id, slug, title, company_name, city, state, salary_min, salary_max, salary_type, experience_required, experience_min, experience_max, source_url, application_url, created_at, status, approval_status, is_featured, is_verified, is_suspicious, suspicious_flags, expires_at, published_at",
-      { count: "exact" },
-    )
-    .order("created_at", { ascending: false });
 
-  if (input.q?.trim()) {
-    const like = toLikePattern(input.q);
-    query = query.or(
-      `title.ilike.${like},company_name.ilike.${like},city.ilike.${like},state.ilike.${like},source_url.ilike.${like},application_url.ilike.${like}`,
-    );
+  const buildQuery = (selectColumns: string[]) => {
+    let query = client
+      .from("jobs")
+      .select(selectColumns.join(", "), { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    if (input.q?.trim()) {
+      const like = toLikePattern(input.q);
+      query = query.or(
+        `title.ilike.${like},company_name.ilike.${like},city.ilike.${like},state.ilike.${like},source_url.ilike.${like},application_url.ilike.${like}`,
+      );
+    }
+
+    return applyJobReviewTabFilter(query, input.tab);
+  };
+
+  let selectColumns = [...JOB_REVIEW_COLUMNS];
+  let result = await buildQuery(selectColumns).range(from, to);
+
+  for (let attempt = 0; attempt < JOB_REVIEW_COLUMNS.length; attempt += 1) {
+    const missingColumn = getMissingJobsColumn(result.error);
+    if (!missingColumn || !selectColumns.includes(missingColumn)) {
+      break;
+    }
+
+    selectColumns = selectColumns.filter((column) => column !== missingColumn);
+    result = await buildQuery(selectColumns).range(from, to);
   }
 
-  query = applyJobReviewTabFilter(query, input.tab);
+  if (result.error) {
+    console.warn("[admin] unable to load jobs review page", result.error);
+  }
 
-  const result = await query.range(from, to);
   const rows = ((result.data as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
     id: String(row.id),
     slug: String(row.slug),

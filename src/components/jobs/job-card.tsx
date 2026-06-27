@@ -16,8 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 function formatSalary(job: Job) {
-  if (job.salaryMin <= 0 && job.salaryMax <= 0) {
-    return "Salary not disclosed";
+  const MIN_VALID_SALARY = 1000;
+  const hasValidMin = job.salaryMin >= MIN_VALID_SALARY;
+  const hasValidMax = job.salaryMax >= MIN_VALID_SALARY;
+
+  if (!hasValidMin && !hasValidMax) {
+    return "As per pay scale";
   }
 
   const formatter = new Intl.NumberFormat("en-IN", {
@@ -26,10 +30,13 @@ function formatSalary(job: Job) {
     maximumFractionDigits: 0,
   });
 
-  const minimum = formatter.format(job.salaryMin);
-  const maximum = formatter.format(job.salaryMax);
-
-  return `${minimum} - ${maximum} / ${job.salaryType}`;
+  if (hasValidMin && hasValidMax) {
+    return `${formatter.format(job.salaryMin)} – ${formatter.format(job.salaryMax)} / ${job.salaryType}`;
+  }
+  if (hasValidMax) {
+    return `Up to ${formatter.format(job.salaryMax)} / ${job.salaryType}`;
+  }
+  return `From ${formatter.format(job.salaryMin)} / ${job.salaryType}`;
 }
 
 function formatDate(value: string | null | undefined) {
@@ -137,7 +144,7 @@ export function JobCard({
                 </p>
                 <p className="flex items-center gap-2">
                   <MapPin className="size-4" />
-                  {job.city}, {job.state}
+                  {job.city === job.state ? job.city : `${job.city}, ${job.state}`}
                 </p>
               </div>
             </div>

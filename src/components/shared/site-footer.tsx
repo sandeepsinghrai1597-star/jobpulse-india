@@ -6,6 +6,7 @@ const footerColumns = [
     title: "Discover",
     links: [
       { href: "/jobs", label: "All jobs" },
+      { href: "/fresher-jobs", label: "Fresher jobs" },
       { href: "/remote-jobs", label: "Remote jobs" },
       { href: "/government-jobs", label: "Government jobs" },
       { href: "/internships", label: "Internships" },

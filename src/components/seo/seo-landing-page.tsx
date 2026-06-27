@@ -73,13 +73,15 @@ export function SeoLandingPage({
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-slate-200">
             <span className="rounded-full border border-white/10 px-4 py-2">
-              {jobs.length} live private-job matches
+              {jobs.length} live job matches
             </span>
+            {governmentJobListings.length > 0 && (
+              <span className="rounded-full border border-white/10 px-4 py-2">
+                {governmentJobListings.length} government listings
+              </span>
+            )}
             <span className="rounded-full border border-white/10 px-4 py-2">
-              {governmentJobListings.length} related government listings
-            </span>
-            <span className="rounded-full border border-white/10 px-4 py-2">
-              Canonical, OG, Twitter and schema enabled
+              Updated daily
             </span>
           </div>
         </div>
@@ -87,9 +89,9 @@ export function SeoLandingPage({
 
       <section className="space-y-4">
         <div className="space-y-2">
-          <h2 className="font-heading text-2xl font-semibold text-slate-950">Dynamic Job Listings</h2>
-          <p className="text-sm leading-6 text-slate-600">
-            These cards are generated from the shared job dataset and filtered automatically for this landing-page intent.
+          <h2 className="font-heading text-2xl font-semibold text-white">Active Job Listings</h2>
+          <p className="text-sm leading-6 text-slate-400">
+            Listings are filtered and updated automatically based on this page&apos;s search intent.
           </p>
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -102,31 +104,31 @@ export function SeoLandingPage({
       {governmentJobListings.length ? (
         <section className="space-y-4">
           <div className="space-y-2">
-            <h2 className="font-heading text-2xl font-semibold text-slate-950">Related Government Listings</h2>
-            <p className="text-sm leading-6 text-slate-600">
-              Government and public-sector links help this landing page satisfy broader search intent around official recruitment paths.
+            <h2 className="font-heading text-2xl font-semibold text-white">Related Government Listings</h2>
+            <p className="text-sm leading-6 text-slate-400">
+              Official public-sector and government recruitment opportunities related to this search.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {governmentJobListings.map((job) => (
-              <Card key={job.slug} className="rounded-[1.75rem] border-slate-200 bg-white shadow-sm">
+              <Card key={job.slug} className="rounded-[1.75rem] border-white/8 bg-white/4 shadow-sm">
                 <CardContent className="space-y-3 p-6">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                       {job.department}
                     </p>
-                    <h3 className="text-xl font-semibold text-slate-950">{job.title}</h3>
+                    <h3 className="text-xl font-semibold text-white">{job.title}</h3>
                   </div>
-                  <p className="text-sm leading-6 text-slate-600">{job.summary}</p>
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span className="rounded-full bg-slate-100 px-3 py-1">{job.state}</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1">Last date: {job.lastDate}</span>
+                  <p className="text-sm leading-6 text-slate-400">{job.summary}</p>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                    <span className="rounded-full bg-white/8 px-3 py-1">{job.state}</span>
+                    <span className="rounded-full bg-white/8 px-3 py-1">Last date: {job.lastDate}</span>
                   </div>
                   <Link
                     href={`/government-jobs/${job.slug}`}
                     className="inline-flex text-sm font-semibold text-primary transition hover:text-primary/80"
                   >
-                    View government job
+                    View government job →
                   </Link>
                 </CardContent>
               </Card>

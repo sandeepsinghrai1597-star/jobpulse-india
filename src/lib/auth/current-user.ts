@@ -14,10 +14,21 @@ export interface CurrentUser {
 }
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  let user: Awaited<ReturnType<Awaited<ReturnType<typeof createClient>>["auth"]["getUser"]>>["data"]["user"];
+
+  try {
+    supabase = await createClient();
+    const response = await supabase.auth.getUser();
+    user = response.data.user;
+  } catch (error) {
+    if (isDynamicServerError(error)) {
+      throw error;
+    }
+
+    console.error("[auth] unable to resolve current user", error);
+    return null;
+  }
 
   if (!user?.id || !user.email) {
     return null;
@@ -59,3 +70,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     subscriptionStatus: data.subscription_status,
   };
 });
+
+function isDynamicServerError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    (error as { digest?: unknown }).digest === "DYNAMIC_SERVER_USAGE"
+  );
+}
