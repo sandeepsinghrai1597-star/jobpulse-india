@@ -19,6 +19,7 @@ export default function CareerGuideIndexPage() {
         eyebrow="Career Guides"
         title="Roadmaps for the roles candidates actually want"
         description="Each guide combines a role overview, salary expectations, skill stack, project ideas, learning resources, and a 30-day plus 90-day plan."
+        as="h1"
       />
       <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {careerGuides.map((guide) => (

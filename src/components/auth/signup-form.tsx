@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Mail, Lock, Phone, User } from "lucide-react";
 import { signupSchema } from "@/lib/validation/schemas";
 import { type AuthErrorState, logAuthError, mapAuthError } from "@/lib/auth/auth-errors";
@@ -11,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { RoleSelector } from "@/components/auth/role-selector";
 
 export function SignupForm() {
-  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,6 +19,7 @@ export function SignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<AuthErrorState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -81,21 +80,92 @@ export function SignupForm() {
         return;
       }
 
-      if (!data.session) {
-        setMessage(
-          "Account created. Check your email to confirm your account before signing in, unless email confirmations are disabled in Supabase Auth.",
-        );
-        setIsSubmitting(false);
-        return;
-      }
-
-      router.refresh();
-      router.push(redirectPath);
+      setSignupSuccess(true);
+      setMessage(
+        data.session
+          ? "Your account was created. Please confirm your email before continuing so your login works reliably."
+          : "We sent a confirmation link to your email. Click it to activate your account.",
+      );
+      setIsSubmitting(false);
     } catch (signUpError) {
       logAuthError("signup:unexpected", signUpError);
       setError(mapAuthError(signUpError));
       setIsSubmitting(false);
     }
+  }
+
+  async function handleResendEmail() {
+    setError(null);
+    setMessage(null);
+    setIsSubmitting(true);
+
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch (createClientError) {
+      logAuthError("signup-resend:create-client", createClientError);
+      setError(mapAuthError(createClientError));
+      setIsSubmitting(false);
+      return;
+    }
+
+    const callbackOrigin =
+      siteUrl && /^https?:\/\//i.test(siteUrl) ? siteUrl.replace(/\/$/, "") : window.location.origin;
+    const redirectPath = role === "employer" ? "/employer" : "/dashboard";
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${callbackOrigin}/auth/callback?next=${redirectPath}`,
+      },
+    });
+
+    if (resendError) {
+      logAuthError("signup-resend:resend", resendError);
+      setError(mapAuthError(resendError));
+    } else {
+      setMessage("Confirmation email resent. Check your inbox and spam folder.");
+    }
+
+    setIsSubmitting(false);
+  }
+
+  if (signupSuccess) {
+    return (
+      <div className="space-y-5 py-6 text-center">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+          <Mail className="size-7" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-slate-950">Check your email</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+          </p>
+          {message ? <p className="mt-3 text-sm text-amber-700">{message}</p> : null}
+        </div>
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-left">
+            <p className="font-semibold text-red-900">{error.title}</p>
+            <p className="mt-1 text-sm text-red-800">{error.message}</p>
+          </div>
+        ) : null}
+        <p className="text-xs text-slate-500">
+          Did not receive it? Check your spam folder or{" "}
+          <button
+            type="button"
+            onClick={handleResendEmail}
+            disabled={isSubmitting}
+            className="font-semibold text-blue-600 underline underline-offset-2 disabled:opacity-70"
+          >
+            resend the email
+          </button>
+          .
+        </p>
+        <Button asChild variant="outline" className="w-full rounded-lg">
+          <Link href="/login">Back to login</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (

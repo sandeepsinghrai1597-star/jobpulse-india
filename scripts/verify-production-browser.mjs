@@ -74,7 +74,8 @@ try {
     const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     const reachedAdmin = !new URL(page.url()).pathname.startsWith("/login");
     const pageResponded = response ? response.status() < 400 : true;
-    results.adminPagesChecked[path] = pageResponded && reachedAdmin;
+    const hasExpectedText = await page.getByText(textPattern).first().isVisible().catch(() => false);
+    results.adminPagesChecked[path] = pageResponded && reachedAdmin && hasExpectedText;
   }
 
   if (candidateEmail && candidatePassword && results.firstJobUrl) {

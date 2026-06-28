@@ -195,7 +195,7 @@ function FilterSelect({
       <select
         name={name}
         defaultValue={value}
-        className="h-11 w-full rounded-xl border border-white/10 bg-white/4 px-3 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+        className="h-11 w-full rounded-xl border border-white/10 bg-white/4 px-3 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 [&_option]:bg-slate-950 [&_option]:text-white"
       >
         {options.map((option) => (
           <option key={option.value || option.label} value={option.value}>
@@ -500,7 +500,7 @@ export default async function JobsPage({
                   <select
                     name="sort"
                     defaultValue={query.sort}
-                    className="h-10 rounded-full border border-white/10 bg-white/4 px-4 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    className="h-10 rounded-full border border-white/10 bg-white/4 px-4 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 [&_option]:bg-slate-950 [&_option]:text-white"
                   >
                     {sortOptions.map((option) => (
                       <option key={option.value} value={option.value}>

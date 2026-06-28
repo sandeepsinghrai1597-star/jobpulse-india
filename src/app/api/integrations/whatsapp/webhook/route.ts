@@ -1,4 +1,17 @@
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verifyMetaSignature(rawBody: string, signatureHeader: string | null) {
+  const appSecret = process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET;
+  if (!appSecret) return false;
+  if (!signatureHeader?.startsWith("sha256=")) return false;
+
+  const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
+  const expectedBuffer = Buffer.from(expected);
+  const actualBuffer = Buffer.from(signatureHeader);
+
+  return expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer);
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -28,7 +41,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const payload = await request.json();
+  const rawBody = await request.text();
+  if (!verifyMetaSignature(rawBody, request.headers.get("x-hub-signature-256"))) {
+    return NextResponse.json({ message: "Invalid WhatsApp webhook signature." }, { status: 401 });
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ message: "Invalid WhatsApp webhook JSON." }, { status: 400 });
+  }
 
   try {
     await fetch(relayUrl, {

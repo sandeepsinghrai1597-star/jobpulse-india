@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { getCachedOrComputeJobMatches } from "@/lib/candidate/job-match";
+import { checkAiRateLimit, getClientIp } from "@/lib/ai/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { mapCandidateProfileRow } from "@/lib/candidate/profile";
 import { getUnifiedJobByIdentifier } from "@/lib/jobs/live";
 
 export async function POST(request: Request) {
-  const body = await request.json();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const rateLimit = checkAiRateLimit(getClientIp(request), user?.id);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: `Rate limit reached. Try again in ${rateLimit.retryAfterSeconds} seconds.` },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    );
+  }
+
+  const body = await request.json();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -2,14 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getRoleFromAuthMetadata, getRoleHome } from "@/lib/auth/auth-errors";
 
-function getSafeFallbackRole(role: unknown) {
-  if (role === "employer" || role === "candidate") {
-    return role;
-  }
-
-  return "candidate";
-}
-
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey =
@@ -74,10 +66,7 @@ export async function updateSession(request: NextRequest) {
 
   const role =
     currentUser?.role ??
-    getRoleFromAuthMetadata(
-      user.app_metadata?.role,
-      getSafeFallbackRole(user.user_metadata?.role),
-    );
+    getRoleFromAuthMetadata(user.app_metadata?.role, undefined);
 
   if (
     (isCandidateRoute && role !== "candidate") ||

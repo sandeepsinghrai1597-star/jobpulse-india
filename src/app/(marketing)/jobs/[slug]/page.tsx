@@ -186,11 +186,19 @@ export default async function JobDetailPage({
     `${job.title} at ${job.companyName}\n${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/jobs/${job.slug}`,
   )}`;
   const sourceLabel = job.sourceUrl ? "Official/Provided job source" : null;
+  const isGovernmentOrOfficialJob =
+    job.sourceType === "official" ||
+    job.officialVerified ||
+    job.governmentSourceVerified ||
+    job.categorySlug?.includes("government") ||
+    /\b(army|navy|air force|agniveer|defence|drdo|ssc|upsc|railway|ibps|sbi)\b/i.test(
+      `${job.companyName} ${job.title}`,
+    );
   const safetySignals = [
     job.noCandidatePayment ? "No candidate payment required" : null,
     trustProfile?.verifiedEmployer ? "Employer profile verified" : null,
     trustProfile?.companyEmailVerified ? "Company email verified" : null,
-    job.officialVerified ? "Source verification present" : null,
+    isGovernmentOrOfficialJob ? "Government or official-source listing" : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -413,22 +421,33 @@ export default async function JobDetailPage({
                   Role type: {formatJobType(job.jobType)}. Work mode: {formatJobType(job.workMode)}.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {trustProfile?.verifiedEmployer ? (
-                    <Badge className="bg-emerald-600 text-white">
+                  {isGovernmentOrOfficialJob ? (
+                    <Badge className="bg-indigo-600 text-white">
                       <BadgeCheck className="mr-1 size-4" />
-                      Verified employer
+                      Official source listing
                     </Badge>
+                  ) : trustProfile ? (
+                    <>
+                      {trustProfile.verifiedEmployer ? (
+                        <Badge className="bg-emerald-600 text-white">
+                          <BadgeCheck className="mr-1 size-4" />
+                          Verified employer
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Employer verification pending</Badge>
+                      )}
+                      {trustProfile.companyEmailVerified ? (
+                        <Badge variant="secondary">Company email verified</Badge>
+                      ) : (
+                        <Badge variant="outline">Company email unverified</Badge>
+                      )}
+                      <Badge variant={trustProfile.domainVerificationStatus === "verified" ? "default" : "outline"}>
+                        Domain {trustProfile.domainVerificationStatus}
+                      </Badge>
+                    </>
                   ) : (
-                    <Badge variant="outline">Employer verification pending</Badge>
+                    <Badge variant="outline">Employer profile not connected</Badge>
                   )}
-                  {trustProfile?.companyEmailVerified ? (
-                    <Badge variant="secondary">Company email verified</Badge>
-                  ) : (
-                    <Badge variant="outline">Company email unverified</Badge>
-                  )}
-                  <Badge variant={trustProfile?.domainVerificationStatus === "verified" ? "default" : "outline"}>
-                    Domain {trustProfile?.domainVerificationStatus ?? "pending"}
-                  </Badge>
                 </div>
                 {safetySignals.length > 0 ? (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">

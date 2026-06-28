@@ -972,7 +972,6 @@ function toPublicJobRow(row) {
   const meta = row.metadata ?? {};
   const salary = extractSalaryBounds(meta.salary ?? null);
   const state = row.state || "All India";
-  const publishedAt = meta.publishedAt ?? new Date().toISOString();
   const deadline = row.last_date ?? null;
   const applicationUrl = row.official_apply_url ?? row.official_url ?? row.notification_url ?? row.source_url;
   const contentText = [row.title, row.summary, row.eligibility, meta.selectionProcess].filter(Boolean).join(" ");

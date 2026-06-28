@@ -73,6 +73,14 @@ function normalizeAnalysisPayload(
 }
 
 export async function POST(request: Request) {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("multipart/form-data")) {
+    return NextResponse.json(
+      { message: "Use multipart/form-data with a resume file field named `resume`." },
+      { status: 400 },
+    );
+  }
+
   const rateLimit = checkAiRateLimit(getClientIp(request));
   if (!rateLimit.allowed) {
     return NextResponse.json(

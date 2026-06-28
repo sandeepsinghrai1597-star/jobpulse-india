@@ -15,6 +15,10 @@ import { SchemaScript } from "@/components/shared/schema-script";
 import { WhatsAppAlertCTA } from "@/components/shared/whatsapp-alert-cta";
 import { Card, CardContent } from "@/components/ui/card";
 
+function appendYearOnce(title: string, suffix: string) {
+  return /\b20\d{2}\b/.test(title) ? title : `${title} ${suffix}`;
+}
+
 function DetailGrid({
   items,
 }: {
@@ -126,7 +130,7 @@ export async function generateMetadata({
   }
 
   return buildMetadata({
-    title: `${job.title} 2026: Eligibility, Last Date, Apply Link`,
+    title: `${appendYearOnce(job.title, "2026")}: Eligibility, Last Date, Apply Link`,
     description: `${job.title} notification with department, eligibility, age limit, application fee, official notification link, apply link, syllabus, selection process, and important dates.`,
     path: `/government-jobs/${job.slug}`,
     keywords: [job.title, job.department, job.category, `${job.category} jobs`, `${job.state} government jobs`],

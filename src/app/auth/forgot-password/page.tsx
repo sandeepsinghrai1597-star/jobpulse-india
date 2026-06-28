@@ -6,6 +6,7 @@ export const metadata = buildMetadata({
   title: "Forgot password",
   description: "Reset your JobPulse India password with a secure Supabase reset email.",
   path: "/auth/forgot-password",
+  noIndex: true,
 });
 
 export default function ForgotPasswordPage() {

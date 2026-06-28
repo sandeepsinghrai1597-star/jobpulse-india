@@ -33,9 +33,9 @@ const pricingFaq = [
 ];
 
 export const metadata = buildMetadata({
-  title: "Pricing — Candidate & Employer Plans | JobPulse India",
+  title: "Pricing - Free & Pro Plans for Candidates and Employers | JobPulse India",
   description:
-    "Free and paid plans for job seekers and employers. Unlock AI resume tools, mock interviews, unlimited job posts, featured listings, and applicant analytics.",
+    "JobPulse India offers free job search and paid Pro plans. Candidates get AI resume and interview tools. Employers get job posts, featured listings, and analytics.",
   path: "/pricing",
   keywords: ["jobpulse pricing", "job portal plans india", "employer job posting price", "resume builder free india"],
 });

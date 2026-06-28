@@ -21,6 +21,8 @@ import { SeoLandingPage } from "@/components/seo/seo-landing-page";
 import { InternshipsPageShell } from "@/components/internships/internships-page-shell";
 import { SchemaScript } from "@/components/shared/schema-script";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return [
     ...seoPages.map((page) => ({ slug: page.slug })),
@@ -53,7 +55,7 @@ export async function generateMetadata({
   }
 
   const page = getSeoPageBySlug(slug);
-  if (!page) return {};
+  if (!page) notFound();
 
   return buildMetadata({
     title: page.title,

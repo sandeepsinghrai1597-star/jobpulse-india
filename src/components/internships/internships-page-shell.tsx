@@ -40,6 +40,7 @@ export function InternshipsPageShell({
         eyebrow="Internship Portal"
         title={title}
         description={description}
+        as="h1"
       />
 
       {featuredCities.length ? (

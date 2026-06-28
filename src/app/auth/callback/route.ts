@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { logAuthError, mapAuthError } from "@/lib/auth/auth-errors";
+import { getRoleFromAuthMetadata, logAuthError, mapAuthError } from "@/lib/auth/auth-errors";
+import { getRoleHome } from "@/lib/auth/redirects";
 
 function getSafeRedirectPath(nextPath: string | null) {
   if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         return buildLoginRedirect(url.origin, redirectTo, "Missing Supabase environment variables.");
       }
 
-      const response = NextResponse.redirect(new URL(redirectTo, url.origin));
+      const response = NextResponse.next();
       const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
         cookies: {
           getAll() {
@@ -58,7 +59,17 @@ export async function GET(request: NextRequest) {
         return buildLoginRedirect(url.origin, redirectTo, error.message);
       }
 
-      return response;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const role = getRoleFromAuthMetadata(user?.app_metadata?.role, user?.user_metadata?.role);
+      const finalRedirect = redirectTo === "/dashboard" ? getRoleHome(role) : redirectTo;
+      const redirectResponse = NextResponse.redirect(new URL(finalRedirect, url.origin));
+      response.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie);
+      });
+
+      return redirectResponse;
     } catch (error) {
       logAuthError("auth-callback:unexpected", error);
       return buildLoginRedirect(url.origin, redirectTo, mapAuthError(error).message);

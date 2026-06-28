@@ -95,9 +95,7 @@ export function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRo
     return appMetadataRole;
   }
 
-  if (userMetadataRole === "employer" || userMetadataRole === "candidate") {
-    return userMetadataRole;
-  }
+  void userMetadataRole;
 
   return "candidate";
 }

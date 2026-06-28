@@ -89,6 +89,7 @@ export default async function GovernmentJobsPage() {
           eyebrow="Government Jobs Hub"
           title="Latest government job updates with official-link-first details"
           description="Browse government-job-style listings for SSC, UPSC, banking, railways, defence, police, teaching, and state-level recruitment pages with fast access to eligibility, application fee, age limit, important dates, and official notification links."
+          as="h1"
         />
         <p className="rounded-2xl border border-amber-300/40 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           {governmentJobsDisclaimer}

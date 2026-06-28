@@ -1,4 +1,9 @@
 import { parseJobSourceConfig } from "@/lib/jobs/source-config";
+import {
+  getImportValidationWarnings,
+  sanitizeImportedLocation,
+  sanitizeImportedUrl,
+} from "@/lib/jobs/import-validation";
 import type {
   ExtractedRawJob,
   JobSourceRecord,
@@ -158,13 +163,16 @@ export function normalizeRawJob(input: {
   const description = stripHtml(input.rawJob.raw_description ?? "");
   const salaryRange = parseRange(input.rawJob.raw_salary);
   const experienceRange = parseRange(input.rawJob.raw_experience);
-  const sourceUrl =
+  const rawSourceUrl =
     firstNonEmpty(
       typeof input.rawJob.raw_data_json.sourceUrl === "string" ? input.rawJob.raw_data_json.sourceUrl : undefined,
       typeof input.rawJob.raw_data_json.url === "string" ? input.rawJob.raw_data_json.url : undefined,
       input.source.source_url,
     ) || input.source.source_url;
-  const applyUrl = firstNonEmpty(input.rawJob.raw_apply_url, sourceUrl) || sourceUrl;
+  const sourceUrl = sanitizeImportedUrl(rawSourceUrl) ?? input.source.source_url;
+  const applyUrl = sanitizeImportedUrl(firstNonEmpty(input.rawJob.raw_apply_url, sourceUrl));
+  const city = sanitizeImportedLocation(location.city) ?? sourceConfig.defaultCity ?? "India";
+  const state = sanitizeImportedLocation(location.state) ?? sourceConfig.defaultState ?? city;
   const responsibilities = uniqueList(
     Array.isArray(input.rawJob.raw_data_json.responsibilities)
       ? (input.rawJob.raw_data_json.responsibilities as unknown[]).map(String)
@@ -191,8 +199,8 @@ export function normalizeRawJob(input: {
     salary_min: salaryRange.min,
     salary_max: salaryRange.max,
     salary_type: input.rawJob.raw_salary ? normalizeSalaryType(input.rawJob.raw_salary) : null,
-    city: location.city || null,
-    state: location.state || null,
+    city,
+    state,
     country: "India",
     job_type: input.rawJob.raw_job_type ? normalizeJobType(input.rawJob.raw_job_type) : null,
     work_mode: description ? normalizeWorkMode(description) : null,
@@ -211,11 +219,17 @@ export function normalizeRawJob(input: {
       ) || null,
     openings: Math.max(1, parseInteger(input.rawJob.raw_data_json.openings as string | number | null | undefined) ?? 1),
     deadline: firstNonEmpty(input.rawJob.raw_deadline) || null,
-    apply_url: applyUrl || null,
+    apply_url: applyUrl,
     source_url: sourceUrl,
     source_type: toNormalizedSourceType(input.source),
     slug: "",
-    enrichment_notes: [],
+    enrichment_notes: getImportValidationWarnings({
+      title: firstNonEmpty(input.rawJob.raw_title, "Untitled role"),
+      applyUrl: input.rawJob.raw_apply_url,
+      sourceUrl: rawSourceUrl,
+      city: location.city,
+      state: location.state,
+    }),
   };
 
   return {

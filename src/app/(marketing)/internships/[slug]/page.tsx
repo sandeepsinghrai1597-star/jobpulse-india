@@ -173,11 +173,17 @@ export default async function InternshipDetailPage({
               </div>
             </div>
             <p className="max-w-3xl leading-7 text-muted-foreground">{internship.summary}</p>
-            <Button asChild className="rounded-full">
-              <a href={internship.applyUrl} target="_blank" rel="noreferrer">
-                Apply now
-              </a>
-            </Button>
+            {internship.applyUrl ? (
+              <Button asChild className="rounded-full">
+                <a href={internship.applyUrl} target="_blank" rel="noreferrer">
+                  Apply now
+                </a>
+              </Button>
+            ) : (
+              <Button className="rounded-full" disabled>
+                Apply link coming soon
+              </Button>
+            )}
           </div>
 
           <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">

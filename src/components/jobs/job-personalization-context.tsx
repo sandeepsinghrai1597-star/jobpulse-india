@@ -84,6 +84,10 @@ export function JobPersonalizationProvider({
     }
 
     async function loadPersonalization() {
+      const timeout = window.setTimeout(() => {
+        controller.abort();
+      }, 3000);
+
       try {
         const response = await fetch(`/api/jobs/personalization?${params.toString()}`, {
           signal: controller.signal,
@@ -115,6 +119,8 @@ export function JobPersonalizationProvider({
           ...current,
           isLoading: false,
         }));
+      } finally {
+        window.clearTimeout(timeout);
       }
     }
 

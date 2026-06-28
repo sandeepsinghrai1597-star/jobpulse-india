@@ -165,7 +165,7 @@ function FilterBar({
       <Button type="submit" className="h-11 rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
         Apply
       </Button>
-      <Button asChild variant="outline" className="h-11 rounded-2xl border-slate-200 bg-white">
+      <Button asChild variant="outline" className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950">
         <Link href={buildAdminHref(state, { q: "", status: "", page: 1 })}>Reset</Link>
       </Button>
     </form>
@@ -193,7 +193,7 @@ function Pagination({
         <Button
           asChild
           variant="outline"
-          className="rounded-xl border-slate-200 bg-white"
+          className="rounded-xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950"
         >
           <Link
             href={buildAdminHref(state, { page: Math.max(1, currentPage - 1) })}
@@ -206,7 +206,7 @@ function Pagination({
         <Button
           asChild
           variant="outline"
-          className="rounded-xl border-slate-200 bg-white"
+          className="rounded-xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950"
         >
           <Link
             href={buildAdminHref(state, { page: Math.min(totalPages, currentPage + 1) })}
@@ -231,7 +231,7 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 shadow-xl shadow-slate-900/5">
+    <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 text-slate-700 shadow-xl shadow-slate-900/5 [&_td]:border-slate-200 [&_td]:text-slate-700 [&_th]:text-slate-700 [&_tr]:border-slate-200">
       <CardHeader className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(59,130,246,0.03)_60%,rgba(255,255,255,0.96)_100%)]">
         <CardTitle className="text-lg text-slate-950">{title}</CardTitle>
         <CardDescription className="max-w-3xl leading-6 text-slate-600">{description}</CardDescription>
@@ -436,15 +436,15 @@ export default async function AdminDashboardPage({
               Fetch Due Job Sources
             </Link>
           </Button>
-          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white">
+          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950">
             <Link href={`/admin/expire-stale-jobs?returnTo=${encodeURIComponent(returnTo)}`}>
               Expire Stale Jobs
             </Link>
           </Button>
-          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white">
+          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950">
             <Link href="/admin/job-sources">Manage Job Sources</Link>
           </Button>
-          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white">
+          <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950">
             <Link href="/admin/jobs/fetched">Open Fetched Queue</Link>
           </Button>
         </div>
@@ -905,7 +905,7 @@ export default async function AdminDashboardPage({
                   </p>
                 </div>
               </CreateFormCard>
-              <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white">
+              <Button asChild variant="outline" className="rounded-2xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950">
                 <Link href="/admin/jobs/import">Open CSV import page</Link>
               </Button>
             </div>

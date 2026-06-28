@@ -69,7 +69,7 @@ export function buildMetadata({
 }
 
 export function jsonLd(data: unknown) {
-  return JSON.stringify(data, null, 0);
+  return JSON.stringify(data, null, 0).replace(/</g, "\\u003c");
 }
 
 export function buildBreadcrumbSchema(

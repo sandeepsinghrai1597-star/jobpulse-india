@@ -1,6 +1,11 @@
 import { createHash } from "crypto";
 import { generateStructuredAiResponse } from "@/lib/ai/gemini";
 import { syncGovernmentSource } from "@/lib/government-jobs/fetcher";
+import {
+  getImportValidationWarnings,
+  sanitizeImportedLocation,
+  sanitizeImportedUrl,
+} from "@/lib/jobs/import-validation";
 import { parseJobSourceConfig } from "@/lib/jobs/source-config";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -474,11 +479,14 @@ function normalizeParsedJob(source: JobSourceRow, parsedJob: ParsedFeedJob): Nor
   const location = extractLocationParts(
     firstNonEmpty(parsedJob.city, parsedJob.state, sourceConfig.defaultCity, sourceConfig.defaultState, "India"),
   );
-  const sourceUrl = firstNonEmpty(parsedJob.sourceUrl, source.source_url);
-  const applicationUrl = firstNonEmpty(parsedJob.applicationUrl, sourceUrl);
+  const rawSourceUrl = firstNonEmpty(parsedJob.sourceUrl, source.source_url);
+  const sourceUrl = sanitizeImportedUrl(rawSourceUrl) ?? source.source_url;
+  const applicationUrl = sanitizeImportedUrl(firstNonEmpty(parsedJob.applicationUrl, sourceUrl));
   const description = stripHtml(parsedJob.description ?? "");
   const title = firstNonEmpty(parsedJob.title, "Untitled role");
   const companyName = firstNonEmpty(parsedJob.companyName, sourceConfig.companyName, source.name);
+  const city = sanitizeImportedLocation(location.city) ?? sourceConfig.defaultCity ?? "India";
+  const state = sanitizeImportedLocation(location.state) ?? sourceConfig.defaultState ?? city;
   const skills = Array.from(new Set(toList(parsedJob.skills)));
   const responsibilities = Array.from(new Set(toList(parsedJob.responsibilities)));
   const requirements = Array.from(new Set(toList(parsedJob.requirements)));
@@ -493,11 +501,11 @@ function normalizeParsedJob(source: JobSourceRow, parsedJob: ParsedFeedJob): Nor
     sourceJobKey: parsedJob.sourceJobKey ?? null,
     sourceType: source.source_type,
     sourceUrl,
-    applicationUrl: applicationUrl || null,
+    applicationUrl,
     title,
     companyName,
-    city: location.city,
-    state: location.state,
+    city,
+    state,
     country: location.country,
     description,
     responsibilities,
@@ -520,21 +528,28 @@ function normalizeParsedJob(source: JobSourceRow, parsedJob: ParsedFeedJob): Nor
     dedupeFingerprint: buildDedupeFingerprint({
       title,
       companyName,
-      city: location.city,
-      state: location.state,
+      city,
+      state,
       sourceUrl,
     }),
     rawPayload: parsedJob.rawPayload ?? {},
     normalizedPayload: {
       title,
       companyName,
-      city: location.city,
-      state: location.state,
+      city,
+      state,
       applicationUrl,
       sourceUrl,
       jobType,
       workMode,
       salaryType,
+      validationWarnings: getImportValidationWarnings({
+        title,
+        applyUrl: parsedJob.applicationUrl,
+        sourceUrl: rawSourceUrl,
+        city: location.city,
+        state: location.state,
+      }),
     },
     enrichmentPayload: {},
   };

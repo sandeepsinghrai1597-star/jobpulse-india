@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runJobFetchScheduler } from "@/server/job-fetcher/scheduler";
+import { rejectUnauthorizedCronRequest } from "@/lib/api/cron-auth";
 
 export const maxDuration = 55;
 
-function isAuthorized(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    return true;
-  }
-
-  const authHeader = request.headers.get("authorization");
-  return authHeader === `Bearer ${cronSecret}`;
-}
-
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ ok: false, message: "Unauthorized cron request." }, { status: 401 });
-  }
+  const unauthorizedResponse = rejectUnauthorizedCronRequest(request);
+  if (unauthorizedResponse) return unauthorizedResponse;
 
   const results = await runJobFetchScheduler("cron");
   const summary = results.reduce(
@@ -46,7 +36,6 @@ export async function GET(request: NextRequest) {
     ok: summary.failedSources === 0,
     fetchedAt: new Date().toISOString(),
     summary,
-    results,
     note: "Fetched jobs were staged into pending_review and were not auto-published.",
   });
 }

@@ -22,6 +22,7 @@ export default function LearningRoadmapPage() {
             eyebrow="Learning Roadmap"
             title="Choose a career path and turn it into a weekly plan"
             description="This section combines SEO-friendly career guides with an AI roadmap generator so learners can move from curiosity to concrete action."
+            as="h1"
           />
           <div className="flex flex-wrap gap-2">
             {careerGuides.map((guide) => (

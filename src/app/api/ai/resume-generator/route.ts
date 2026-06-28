@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateStructuredAiResponse } from "@/lib/ai/gemini";
+import { checkAiRateLimit, getClientIp } from "@/lib/ai/rate-limit";
 import { resumeAiRequestSchema } from "@/lib/resume/schema";
 
 function buildFallbackKeywords(role: string, jobDescription: string, skills: string[]) {
@@ -26,6 +27,14 @@ function buildFallbackKeywords(role: string, jobDescription: string, skills: str
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkAiRateLimit(getClientIp(request));
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { message: `Rate limit reached. Try again in ${rateLimit.retryAfterSeconds} seconds.` },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    );
+  }
+
   const body = await request.json();
   const parsed = resumeAiRequestSchema.safeParse(body);
 

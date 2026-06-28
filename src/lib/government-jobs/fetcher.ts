@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { sanitizeImportedLocation, sanitizeImportedUrl } from "@/lib/jobs/import-validation";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { JobSourceRow } from "@/lib/jobs/ingestion";
 
@@ -431,14 +432,14 @@ async function extractGovernmentJobsFromHtml(source: JobSourceRow, html: string)
       department: config.department ?? source.name,
       category: inferCategory(title, config.category),
       categorySlug: inferCategorySlug(title, config.categorySlug),
-      state: config.state ?? extractLabeledValue(candidate.text, ["state", "location"]),
+      state: sanitizeImportedLocation(config.state ?? extractLabeledValue(candidate.text, ["state", "location"])) ?? null,
       eligibility: extractLabeledValue(candidate.text, ["eligibility", "qualification", "educational qualification"]),
       ageLimit: extractLabeledValue(candidate.text, ["age limit", "age"]),
       applicationFee: extractLabeledValue(candidate.text, ["application fee", "fee"]),
       lastDate: extractDateField(candidate.text, ["last date", "closing date", "apply by"]),
-      notificationUrl: notificationLink?.href ?? null,
-      officialApplyUrl: applyLink?.href ?? null,
-      sourceUrl,
+      notificationUrl: sanitizeImportedUrl(notificationLink?.href) ?? null,
+      officialApplyUrl: sanitizeImportedUrl(applyLink?.href) ?? null,
+      sourceUrl: sanitizeImportedUrl(sourceUrl) ?? source.source_url,
       summary: buildSummary(candidate.text),
       metadata: {
         source_name: source.name,
