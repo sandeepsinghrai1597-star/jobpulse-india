@@ -12,6 +12,7 @@ import {
   getRelatedGovernmentJobs,
 } from "@/lib/government-jobs/live";
 import { SchemaScript } from "@/components/shared/schema-script";
+import { WhatsAppAlertCTA } from "@/components/shared/whatsapp-alert-cta";
 import { Card, CardContent } from "@/components/ui/card";
 
 function DetailGrid({
@@ -247,8 +248,31 @@ export default async function GovernmentJobsDynamicPage({
 
   const relatedJobs = await getRelatedGovernmentJobs(job.slug, job.categorySlug ?? "");
 
+  const jobPostingSchema = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    description: job.summary ?? job.title,
+    validThrough: job.lastDate ?? undefined,
+    employmentType: "FULL_TIME",
+    hiringOrganization: {
+      "@type": "Organization",
+      name: job.department,
+    },
+    jobLocation: {
+      "@type": "Place",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: job.state,
+        addressCountry: "IN",
+      },
+    },
+    ...(job.openings ? { totalJobOpenings: Number(job.openings) || undefined } : {}),
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <SchemaScript data={jobPostingSchema} />
       <SchemaScript
         data={{
           "@context": "https://schema.org",
@@ -530,6 +554,8 @@ export default async function GovernmentJobsDynamicPage({
             </CardContent>
           </Card>
           ) : null}
+
+          <WhatsAppAlertCTA category={job.category} />
 
           {relatedJobs.length ? (
             <div className="space-y-4">

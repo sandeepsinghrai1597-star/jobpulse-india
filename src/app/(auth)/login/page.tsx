@@ -18,6 +18,7 @@ export const metadata = buildMetadata({
   title: "Login",
   description: "Sign in to JobPulse India as a candidate, employer, or admin.",
   path: "/login",
+  noIndex: true,
 });
 
 export default async function LoginPage({

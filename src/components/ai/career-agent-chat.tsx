@@ -445,6 +445,26 @@ export function CareerAgentChat({
         ) : null}
 
         <form onSubmit={submitMessage} className="border-t border-slate-200 bg-white p-4">
+          {messages.length === 0 ? (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {[
+                "I'm a BCA fresher in Delhi — what IT jobs should I apply for?",
+                "Compare SSC CGL vs banking exams for a commerce graduate",
+                "What skills do I need for a data analyst job in Bangalore?",
+                "How do I prepare for a TCS interview in 2 weeks?",
+                "What is the salary range for software developers in Pune?",
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => setInput(prompt)}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 transition hover:border-primary hover:text-primary"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Textarea
               value={input}

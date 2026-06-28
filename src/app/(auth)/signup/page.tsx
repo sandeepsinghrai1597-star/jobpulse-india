@@ -9,6 +9,7 @@ export const metadata = buildMetadata({
   title: "Signup",
   description: "Create a candidate or employer account on JobPulse India.",
   path: "/signup",
+  noIndex: true,
 });
 
 export default async function SignupPage() {

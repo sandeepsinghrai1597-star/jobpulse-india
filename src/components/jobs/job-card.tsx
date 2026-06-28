@@ -56,6 +56,17 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(parsed));
 }
 
+function getDeadlineStatus(deadline: string | null | undefined) {
+  if (!deadline) return null;
+  const parsed = Date.parse(deadline);
+  if (Number.isNaN(parsed)) return null;
+  const diffDays = Math.ceil((parsed - Date.now()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return { label: "Deadline passed", className: "bg-red-100 text-red-700 border-red-200" };
+  if (diffDays <= 3) return { label: `${diffDays}d left`, className: "bg-red-100 text-red-700 border-red-200" };
+  if (diffDays <= 7) return { label: `${diffDays}d left`, className: "bg-amber-100 text-amber-700 border-amber-200" };
+  return null;
+}
+
 function formatPostedDate(job: Job) {
   const source = job.publishedAt ?? job.createdAt;
   const parsed = source ? Date.parse(source) : Number.NaN;
@@ -177,6 +188,14 @@ export function JobCard({
           <p className="flex items-center gap-2 rounded-2xl bg-white/4 px-3 py-2 sm:col-span-2 xl:col-span-2">
             <CalendarClock className="size-4 text-slate-500" />
             Deadline: {formatDate(job.applicationDeadline)}
+            {(() => {
+              const status = getDeadlineStatus(job.applicationDeadline);
+              return status ? (
+                <span className={`ml-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${status.className}`}>
+                  {status.label}
+                </span>
+              ) : null;
+            })()}
           </p>
         </div>
 

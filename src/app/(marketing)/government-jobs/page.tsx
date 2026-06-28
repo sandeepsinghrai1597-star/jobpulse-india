@@ -7,6 +7,7 @@ import {
 import { getApprovedGovernmentJobs } from "@/lib/government-jobs/live";
 import { SchemaScript } from "@/components/shared/schema-script";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { WhatsAppAlertCTA } from "@/components/shared/whatsapp-alert-cta";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = buildMetadata({
@@ -107,6 +108,8 @@ export default async function GovernmentJobsPage() {
           </div>
         </div>
       </div>
+
+      <WhatsAppAlertCTA />
 
       <section className="mt-12">
         <SectionHeading
