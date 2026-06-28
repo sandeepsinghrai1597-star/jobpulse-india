@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { CareerAgentContext } from "@/lib/ai/career-agent";
 
 export const metadata = buildMetadata({
-  title: "AI Career Agent",
+  title: "AI Career Agent | Personalized Job & Career Guidance — JobPulse India",
   description:
-    "Chat with an AI career agent for role guidance, verified job matches, skill gaps, resume improvement, interview prep, salary guidance, and action plans.",
+    "Chat with India's AI Career Agent for verified job matches, skill gap analysis, resume tips, interview prep, salary guidance, and 7-day action plans tailored to your profile.",
   path: "/ai-career-agent",
+  keywords: ["ai career guidance india", "ai job advisor", "career agent india", "personalized job search ai"],
 });
 
 const profileSelect = `

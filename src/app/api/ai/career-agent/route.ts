@@ -7,6 +7,7 @@ import {
   type CareerAgentJob,
 } from "@/lib/ai/career-agent";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import { checkAiRateLimit, getClientIp } from "@/lib/ai/rate-limit";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,9 +26,15 @@ type CareerAgentJobRow = {
 const JOB_LOOKUP_TIMEOUT_MS = 4000;
 
 async function checkCareerAgentRateLimit(request: Request) {
-  void request;
-  // Placeholder for a future per-IP or per-user limiter.
-  return { allowed: true };
+  let userId: string | undefined;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    userId = user?.id ?? undefined;
+  } catch {
+    userId = undefined;
+  }
+  return checkAiRateLimit(getClientIp(request), userId);
 }
 
 async function loadCareerAgentJobs(): Promise<CareerAgentJob[]> {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
+import { checkAiRateLimit, getClientIp } from "@/lib/ai/rate-limit";
 import { generateStructuredAiResponse } from "@/lib/ai/gemini";
 import {
   buildFallbackResumeAnalysis,
@@ -72,6 +73,14 @@ function normalizeAnalysisPayload(
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkAiRateLimit(getClientIp(request));
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { message: `Rate limit reached. Try again in ${rateLimit.retryAfterSeconds} seconds.` },
+      { status: 429 },
+    );
+  }
+
   const formData = await request.formData();
   const file = formData.get("resume");
 

@@ -5,10 +5,11 @@ import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = buildMetadata({
-  title: "Resume Builder",
+  title: "Resume Builder | Build ATS-Ready Resumes Free — JobPulse India",
   description:
-    "Create ATS-friendly resumes for fresher, internship, IT, sales, banking, and experienced roles.",
+    "Create ATS-friendly resumes for fresher, internship, IT, sales, banking, and experienced roles. Live preview, AI suggestions, and PDF export.",
   path: "/resume-builder",
+  keywords: ["free resume builder india", "ats resume builder", "fresher resume builder", "resume maker india 2026"],
 });
 
 export default async function ResumeBuilderPage() {

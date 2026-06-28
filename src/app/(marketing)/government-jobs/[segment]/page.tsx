@@ -79,7 +79,7 @@ function LinkList({
           key={`${link.label}-${link.href}`}
           href={link.href}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer nofollow"
           className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-primary hover:text-primary"
         >
           <span>{link.label}</span>
@@ -423,7 +423,7 @@ export default async function GovernmentJobsDynamicPage({
                   <a
                     href={job.officialNotificationLink}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer nofollow"
                     className="text-sm font-semibold text-primary"
                   >
                     Visit official notification

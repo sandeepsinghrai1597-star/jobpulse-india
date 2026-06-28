@@ -4,26 +4,13 @@ import {
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
-  Cloud,
-  Code,
-  CreditCard,
-  Database,
   FileSearch,
-  Film,
   GraduationCap,
   Landmark,
-  Layers,
-  MessageCircle,
   MessageSquareText,
-  Music,
-  Package,
-  Palette,
   Search,
-  Send,
   Sparkles,
-  Square,
   Target,
-  Zap,
 } from "lucide-react";
 import { jobCategories, testimonials } from "@/lib/data/site";
 import type { Job } from "@/types";
@@ -53,29 +40,31 @@ const toolCards = [
   },
 ];
 
-const marqueeLogos = [
-  { name: "Spotify", icon: Music, accent: "text-emerald-600" },
-  { name: "Netflix", icon: Film, accent: "text-rose-600" },
-  { name: "Amazon", icon: Package, accent: "text-amber-600" },
-  { name: "Google", icon: Search, accent: "text-slate-900" },
-  { name: "Reddit", icon: MessageCircle, accent: "text-orange-500" },
-  { name: "GitHub", icon: Code, accent: "text-slate-800" },
-  { name: "Slack", icon: Send, accent: "text-purple-600" },
-  { name: "Figma", icon: Square, accent: "text-indigo-600" },
-  { name: "Stripe", icon: CreditCard, accent: "text-blue-600" },
-  { name: "Discord", icon: Cloud, accent: "text-indigo-500" },
-  { name: "Zapier", icon: Zap, accent: "text-orange-600" },
-  { name: "GitLab", icon: Code, accent: "text-orange-700" },
-  { name: "Notion", icon: Palette, accent: "text-slate-950" },
-  { name: "HashiCorp", icon: Building2, accent: "text-slate-700" },
-  { name: "Intercom", icon: MessageCircle, accent: "text-blue-500" },
-  { name: "InVision", icon: Layers, accent: "text-pink-600" },
-  { name: "ConvertKit", icon: Database, accent: "text-cyan-600" },
-  { name: "Buffer", icon: Zap, accent: "text-slate-600" },
-  { name: "Automattic", icon: Code, accent: "text-blue-900" },
-  { name: "Calendly", icon: BriefcaseBusiness, accent: "text-slate-700" },
-  { name: "Typeform", icon: Send, accent: "text-lime-600" },
-  { name: "Miro", icon: Palette, accent: "text-yellow-600" },
+const whyCards = [
+  {
+    icon: CheckCircle2,
+    accent: "text-emerald-400",
+    title: "Verified listings only",
+    description: "Every government job links to the official notification. No spam, no unverified openings.",
+  },
+  {
+    icon: Sparkles,
+    accent: "text-sky-400",
+    title: "AI tools built for India",
+    description: "Resume analyzer, mock interviews, and career guidance trained on Indian job market data.",
+  },
+  {
+    icon: GraduationCap,
+    accent: "text-amber-400",
+    title: "Fresher-first focus",
+    description: "Designed for 0–3 year experience candidates — freshers, graduates, and career switchers.",
+  },
+  {
+    icon: Landmark,
+    accent: "text-rose-400",
+    title: "150+ government jobs",
+    description: "SSC, UPSC, Railways, Banking, Police, Defence — with eligibility, dates, and apply links.",
+  },
 ];
 
 const quickSearches = [
@@ -103,36 +92,29 @@ export function HomePage({
       <HeroSection stats={heroStats} />
 
       <section className="w-full py-14">
-        <div className="px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full flex-col items-center text-center">
             <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              Companies Known for Remote-Friendly Hiring
+              Why candidates choose JobPulse India
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              These companies are globally recognized for remote work cultures. Check their official careers pages for current openings.
+              Built specifically for the Indian job market — freshers, government aspirants, and career switchers.
             </p>
           </div>
-
-          <div className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/8 bg-white/4 p-6 shadow-[0_30px_80px_-35px_rgba(255,45,120,0.18)]">
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-[#0d0b17] to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#0d0b17] to-transparent" />
-
-            <div className="group overflow-hidden">
-              <div className="marquee-track flex w-max items-center gap-6 px-4 py-4 animate-[marquee_24s_linear_infinite] transition-all duration-300 group-hover:[animation-play-state:paused]">
-                {[...marqueeLogos, ...marqueeLogos].map((logo, index) => {
-                  const LogoIcon = logo.icon;
-                  return (
-                    <div
-                      key={`${logo.name}-${index}`}
-                      className="flex min-w-[160px] items-center justify-center gap-3 rounded-3xl border border-white/10 bg-[rgba(255,255,255,0.05)] px-6 py-4 shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
-                    >
-                      <LogoIcon className={`h-6 w-6 ${logo.accent}`} />
-                      <span className={`text-base font-semibold ${logo.accent}`}>{logo.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {whyCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.title}
+                  className="rounded-[1.75rem] border border-white/8 bg-white/4 p-6 shadow-sm"
+                >
+                  <Icon className={`size-8 ${card.accent}`} />
+                  <p className="mt-4 font-semibold text-white">{card.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">{card.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

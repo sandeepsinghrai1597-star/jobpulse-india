@@ -45,6 +45,22 @@ export default async function HomeRoute() {
             "India's AI Career Companion for Jobs, Resumes & Interviews.",
         }}
       />
+      <SchemaScript
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "JobPulse India",
+          url: siteConfig.url,
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${siteConfig.url}/jobs?keyword={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
       <HomePage latestJobs={latestJobs} heroStats={heroStats} />
     </>
   );

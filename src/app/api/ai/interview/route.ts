@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
+import { checkAiRateLimit, getClientIp } from "@/lib/ai/rate-limit";
 import { z } from "zod";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
 import {
@@ -69,6 +70,14 @@ type StoredSessionRow = {
 };
 
 export async function POST(request: Request) {
+  const rateLimit = checkAiRateLimit(getClientIp(request));
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: `Rate limit reached. Try again in ${rateLimit.retryAfterSeconds} seconds.` },
+      { status: 429 },
+    );
+  }
+
   try {
     const body = await request.json();
     const parsed = requestSchema.safeParse(body);

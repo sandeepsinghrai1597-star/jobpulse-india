@@ -37,28 +37,54 @@ The most important production finding is that the site is live and buildable, bu
 - `/api/og` returned `image/svg+xml`, while metadata advertises it as the main OG/Twitter image.
 - `/this-route-should-not-exist` returned HTTP 200, indicating a soft-404/indexation risk.
 
+## Second-Pass Recheck Addendum
+
+Recheck date: 2026-06-28.
+
+This second pass inspected 63 `page.tsx` routes, 43 route handlers, 5 layouts, 4 loading states, 23 Supabase tables, 44 RLS policies, 32 indexes, production headers, sitemap output, public API behavior, cron behavior, AI endpoint responses, and the local verification suite again.
+
+Important corrections and additions:
+
+- The local source for `src/app/[slug]/page.tsx` now calls `notFound()` for unknown SEO slugs, but production still returns HTTP 200 for `/this-route-should-not-exist` with `x-matched-path: /[slug]`. Treat this as a deployment/cache mismatch or an unshipped fix, not merely a code defect.
+- Public cron endpoints are more serious than first reported. Production allows unauthenticated calls to `/api/cron/fetch-jobs`, `/api/cron/expire-jobs`, and `/api/cron/job-sync`. The first two permit access when `CRON_SECRET` is missing; `src/app/api/cron/job-sync/route.ts` has no authorization check at all.
+- `/api/cron/fetch-jobs` took about 52.9 seconds and returned job-source processing data to an unauthenticated request. This is an operational abuse and information disclosure risk.
+- `/api/cron/job-sync` returned about 55 KB of source/job sync data to an unauthenticated request.
+- `/api/jobs/search?limit=5` returned the same about 309 KB payload as `/api/jobs/search`; the `limit` parameter is ignored because `src/app/api/jobs/search/route.ts` returns every matched job.
+- `/api/jobs` is better behaved: it paginates with `total`, `page`, `perPage`, and 12 `results`.
+- Large production HTML pages exist: `/remote-jobs` about 1.62 MB and `/work-from-home-jobs` about 1.66 MB. These pages need pagination, lighter job payloads, or server-side content trimming.
+- More pages are missing visible H1s than the first pass listed: `/career-guide`, `/internships-in-bangalore`, `/government-jobs`, `/internships`, `/learning-roadmap`, and several dashboard/admin pages.
+- `/auth/forgot-password` is currently `index, follow`; auth utility pages should be `noindex, nofollow`.
+- `/api/ai/skill-gap` returns HTTP 200 with generic output for an empty POST body. It should validate required fields and return 400 for empty/invalid input.
+- `/api/ai/resume-analyze` returns HTTP 500 with an empty body for an empty JSON POST because the route expects multipart form data. It should reject wrong content types with a structured 400.
+- WhatsApp webhook `GET` verification correctly returns 403 without the verification token, but `POST` relays request JSON to `N8N_JOB_ALERTS_WEBHOOK_URL` without signature verification. Add Meta webhook signature validation before relay.
+- Production security headers include HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`, but no Content Security Policy.
+- Sitemap is clean on duplicates and has 384 URLs, with 163 government-job URLs and 150 job URLs; no API URLs were found in the sitemap.
+- Supabase policy review found 6 public-ish policies: public reads for companies, government jobs, internships, salary data, plus anonymous inserts for analytics events and job reports. The insert policies need rate limits and anti-spam controls.
+- E2E setup still fails on 2026-06-28 with `Database error creating new user`; `npm run setup:e2e` is blocked before Playwright can exercise role journeys.
+- Local verification on 2026-06-28: `npx tsc --noEmit` passed, `npm run test` passed 8 suites and 21 tests, `npm run lint` still failed with the same temp-script errors and warnings.
+
 ## Top 20 Critical Bugs
 
-1. Soft-404: unknown routes return 200 through `src/app/[slug]/page.tsx`; return `notFound()` when no SEO page exists.
-2. Lint failure: exclude or clean `tmp/generate-jobpulse-sql.cjs`; update `eslint.config.mjs`.
-3. E2E blocked: `e2e/global.setup.ts` fails because `scripts/setup-e2e.mjs` cannot create a database user.
-4. AI rate limiter is a placeholder in `src/app/api/ai/career-agent/route.ts`.
-5. Anonymous resume analysis can trigger AI cost in `src/app/api/ai/resume-analyze/route.ts`.
-6. `/api/jobs/search` returns a very large payload; enforce pagination and max page size.
-7. Important pages lack a visible H1: `src/app/(marketing)/government-jobs/page.tsx`, `src/app/(marketing)/internships/page.tsx`, `src/app/(marketing)/learning-roadmap/page.tsx`.
-8. OG endpoint returns SVG, which is less reliable for social previews than PNG/JPEG.
-9. `robots.ts` disallows `/api`, but `/api/sitemap` still exists; remove or protect duplicate sitemap JSON.
-10. Public analytics insert policy allows anonymous arbitrary event inserts in `supabase/schema.sql`.
-11. Public job report insert policy allows anonymous inserts without rate limiting in `supabase/schema.sql`.
-12. Proxy authorization is helpful but must not be the only guard for admin/employer routes after CVE-2025-29927 style bypasses.
-13. Role fallback still reads `user_metadata` in `src/lib/supabase/proxy.ts`; only `app_metadata` or DB role should authorize.
-14. Cron routes under `src/app/api/cron/*` need explicit secret validation on every entrypoint.
-15. WhatsApp webhook route needs signature verification and replay protection.
-16. `src/lib/jobs/live.ts` has large mixed responsibilities: external fetching, fallback conversion, persistence, search data loading.
-17. Government job title templates repeat "2026" on several production pages.
-18. Homepage company marquee uses recognizable company names without evidence of actual partnerships.
-19. Candidate trust claims need stronger source labels and verification timestamps on every job detail page.
-20. No production monitoring contract is visible for AI costs, API error rates, job ingestion failures, or search latency.
+1. Public cron execution: `/api/cron/fetch-jobs`, `/api/cron/expire-jobs`, and `/api/cron/job-sync` are callable on production without auth. Fix `src/app/api/cron/fetch-jobs/route.ts`, `src/app/api/cron/expire-jobs/route.ts`, and `src/app/api/cron/job-sync/route.ts` to fail closed when `CRON_SECRET` is missing.
+2. Soft-404 in production: unknown routes still return 200 through `/[slug]`. Local `src/app/[slug]/page.tsx` has `notFound()`, so deploy or cache invalidation is required.
+3. `/api/jobs/search` returns every matched job and ignores `limit`; enforce pagination and max payload size in `src/app/api/jobs/search/route.ts`.
+4. Heavy public pages: `/remote-jobs` and `/work-from-home-jobs` exceed 1.6 MB HTML.
+5. Lint failure: exclude or clean `tmp/generate-jobpulse-sql.cjs`; update `eslint.config.mjs`.
+6. E2E blocked: `e2e/global.setup.ts` fails because `scripts/setup-e2e.mjs` cannot create a database user.
+7. AI rate limiter is a placeholder in `src/app/api/ai/career-agent/route.ts`.
+8. Anonymous resume analysis can trigger AI cost in `src/app/api/ai/resume-analyze/route.ts`.
+9. `src/app/api/ai/resume-analyze/route.ts` returns empty 500 for wrong content type instead of structured 400.
+10. `src/app/api/ai/skill-gap/route.ts` returns 200 for empty input; require target role/current skills.
+11. Important pages lack visible H1s: government jobs, internships, learning roadmap, career guide, internship city pages, and many dashboard/admin pages.
+12. OG endpoint returns SVG, which is less reliable for social previews than PNG/JPEG.
+13. `/auth/forgot-password` is indexable; mark auth utility pages noindex.
+14. Public analytics insert policy allows anonymous arbitrary event inserts in `supabase/schema.sql`.
+15. Public job report insert policy allows anonymous inserts without rate limiting in `supabase/schema.sql`.
+16. Proxy authorization is helpful but must not be the only guard for admin/employer routes after CVE-2025-29927 style bypasses.
+17. Role fallback still reads `user_metadata` in `src/lib/supabase/proxy.ts`; only `app_metadata` or DB role should authorize.
+18. WhatsApp webhook `POST` relays to n8n without Meta signature verification or replay protection.
+19. Government job title templates repeat "2026" on several production pages.
+20. No production monitoring contract is visible for cron abuse, AI costs, API error rates, job ingestion failures, or search latency.
 
 ## Product Audit
 

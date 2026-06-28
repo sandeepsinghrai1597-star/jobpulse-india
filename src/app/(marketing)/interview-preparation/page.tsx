@@ -3,10 +3,11 @@ import { InterviewPreparation } from "@/components/ai/interview-preparation";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Interview Preparation",
+  title: "Interview Preparation | AI Mock Interview Practice — JobPulse India",
   description:
-    "Practice HR, technical, behavioral, fresher, and role-specific interviews with AI scoring and feedback.",
+    "Practice HR, technical, behavioral, fresher, and role-specific mock interviews with instant AI scoring and feedback. Free to start.",
   path: "/interview-preparation",
+  keywords: ["ai mock interview india", "interview preparation online", "hr interview practice", "technical interview prep india"],
 });
 
 export default function InterviewPreparationPage() {
