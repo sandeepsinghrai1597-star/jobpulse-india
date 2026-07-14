@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
       totalNew: accumulator.totalNew + result.totalNew,
       totalDuplicates: accumulator.totalDuplicates + result.totalDuplicates,
       totalFailedItems: accumulator.totalFailedItems + result.totalFailed,
+      totalPublished: accumulator.totalPublished + (result.totalPublished ?? 0),
     }),
     {
       processedSources: 0,
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
       totalNew: 0,
       totalDuplicates: 0,
       totalFailedItems: 0,
+      totalPublished: 0,
     },
   );
 
@@ -36,6 +38,6 @@ export async function GET(request: NextRequest) {
     ok: summary.failedSources === 0,
     fetchedAt: new Date().toISOString(),
     summary,
-    note: "Fetched jobs were staged into pending_review and were not auto-published.",
+    note: "Quality-gated jobs are auto-published to the live board; the rest stay in pending_review for admin approval.",
   });
 }

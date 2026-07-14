@@ -23,7 +23,7 @@ function safeLastModified(...values: Array<string | Date | null | undefined>) {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const jobs = await getUnifiedJobs();
-  const governmentJobs = await getApprovedGovernmentJobs();
+  const governmentJobs = await getApprovedGovernmentJobs({ includeExpired: true });
   const activeJobs = jobs.filter((job) => job.status === "active");
   const staticRoutes = [
     "",

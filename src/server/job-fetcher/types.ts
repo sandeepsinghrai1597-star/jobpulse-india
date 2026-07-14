@@ -132,6 +132,7 @@ export type BatchCounters = {
   totalNew: number;
   totalDuplicates: number;
   totalFailed: number;
+  totalPublished?: number;
 };
 
 export type SourceRunResult = BatchCounters & {

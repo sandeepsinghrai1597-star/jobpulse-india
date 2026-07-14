@@ -58,7 +58,13 @@ npm run dev
 - Deploy to Vercel
 - Add the same environment variables in Vercel project settings
 - Set `CRON_SECRET` in Vercel so cron requests are authenticated
-- Configure Vercel Cron for `/api/cron/fetch-jobs` every 6 hours
+- Vercel Cron runs `/api/cron/fetch-jobs` twice daily (see `vercel.json`)
+- Fetched jobs that clear the quality gates are auto-published to the live board
+  (`JOB_FETCH_AUTO_PUBLISH=false` disables this; `JOB_FETCH_AUTO_PUBLISH_MIN_QUALITY`
+  adjusts the 0-100 threshold, default 60). Lower-quality jobs stay in
+  `pending_review` for admin approval under `/admin/jobs/fetched`.
+- Automatic ingestion only runs for sources configured in `/admin/job-sources`
+  with **Allow auto fetch** enabled — add at least one active source.
 - Connect GA4 and Search Console after production domain setup
 
 ## Security

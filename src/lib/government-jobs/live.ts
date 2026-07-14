@@ -237,10 +237,90 @@ function rowToGovernmentJob(row: GovernmentJobRow | ImportedGovernmentJobRow): G
   };
 }
 
+const INDIA_TIME_ZONE = "Asia/Kolkata";
+
+function todayInIndia(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: INDIA_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeLastDate(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const match = value.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+  return match?.[1] ?? null;
+}
+
+export type GovernmentUpdateType = "recruitment" | "admit-card" | "result" | "answer-key";
+
+export function classifyGovernmentUpdate(title: string): GovernmentUpdateType {
+  const normalized = title.toLowerCase();
+  if (/answer\s?key/.test(normalized)) return "answer-key";
+  if (/(result|merit list|cut\s?off|scorecard|score card|final selection)/.test(normalized)) return "result";
+  if (/(admit card|hall ticket|exam city|call letter|exam date|city slip|city details)/.test(normalized)) {
+    return "admit-card";
+  }
+  return "recruitment";
+}
+
+export function isGovernmentJobActive(job: GovernmentJob, todayDate = todayInIndia()) {
+  const lastDate = normalizeLastDate(job.lastDate);
+  return lastDate === null || lastDate >= todayDate;
+}
+
+function sortGovernmentJobsByDeadline(jobs: GovernmentJob[]) {
+  return [...jobs].sort((a, b) => {
+    const aDate = normalizeLastDate(a.lastDate);
+    const bDate = normalizeLastDate(b.lastDate);
+    if (aDate && bDate) return aDate.localeCompare(bDate);
+    if (aDate) return -1;
+    if (bDate) return 1;
+    return 0;
+  });
+}
+
+const MIN_VISIBLE_GOVERNMENT_JOBS = 6;
+
+function finalizeGovernmentJobs(jobs: GovernmentJob[], includeExpired: boolean) {
+  if (includeExpired) {
+    return sortGovernmentJobsByDeadline(jobs);
+  }
+
+  const todayDate = todayInIndia();
+  const active = jobs.filter((job) => isGovernmentJobActive(job, todayDate));
+
+  // Keep hub and feed pages populated while sources refill: top up with the
+  // most recently expired listings (their passed deadlines stay visible).
+  if (active.length < MIN_VISIBLE_GOVERNMENT_JOBS) {
+    const expired = jobs
+      .filter((job) => !isGovernmentJobActive(job, todayDate))
+      .sort((a, b) => (normalizeLastDate(b.lastDate) ?? "").localeCompare(normalizeLastDate(a.lastDate) ?? ""));
+    return [
+      ...sortGovernmentJobsByDeadline(active),
+      ...expired.slice(0, MIN_VISIBLE_GOVERNMENT_JOBS - active.length),
+    ];
+  }
+
+  return sortGovernmentJobsByDeadline(active);
+}
+
 function mergeGovernmentJobs(primary: GovernmentJob[], fallback: GovernmentJob[]) {
   const bySlug = new Map<string, GovernmentJob>();
 
-  for (const job of [...primary, ...fallback]) {
+  // Insert fallback first so primary entries win when slugs collide.
+  for (const job of [...fallback, ...primary]) {
     bySlug.set(job.slug, job);
   }
 
@@ -286,7 +366,8 @@ async function getGovernmentJobsClient() {
   return getSupabaseAdminClient() ?? (await createClient());
 }
 
-export async function getApprovedGovernmentJobs() {
+export async function getApprovedGovernmentJobs(options?: { includeExpired?: boolean }) {
+  const includeExpired = options?.includeExpired ?? false;
   try {
     const client = await getGovernmentJobsClient();
     const importedResult = await client
@@ -330,20 +411,26 @@ export async function getApprovedGovernmentJobs() {
     }
 
     if (error || !data || data.length === 0) {
-      return mergeGovernmentJobs(importedRows.map(rowToGovernmentJob), mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs));
+      return finalizeGovernmentJobs(
+        mergeGovernmentJobs(importedRows.map(rowToGovernmentJob), mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs)),
+        includeExpired,
+      );
     }
 
-    return mergeGovernmentJobs(
-      importedRows.map(rowToGovernmentJob),
-      mergeGovernmentJobs((data as GovernmentJobRow[]).map(rowToGovernmentJob), importedGovernmentJobs),
+    return finalizeGovernmentJobs(
+      mergeGovernmentJobs(
+        importedRows.map(rowToGovernmentJob),
+        mergeGovernmentJobs((data as GovernmentJobRow[]).map(rowToGovernmentJob), importedGovernmentJobs),
+      ),
+      includeExpired,
     );
   } catch {
-    return mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs);
+    return finalizeGovernmentJobs(mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs), includeExpired);
   }
 }
 
 export async function getGovernmentJobBySlug(slug: string) {
-  const jobs = await getApprovedGovernmentJobs();
+  const jobs = await getApprovedGovernmentJobs({ includeExpired: true });
   return jobs.find((job) => job.slug === slug) ?? getStaticGovernmentJobBySlug(slug);
 }
 
@@ -359,7 +446,7 @@ export async function getRelatedGovernmentJobs(currentSlug: string, categorySlug
 }
 
 export async function getGovernmentSegments() {
-  const jobs = await getApprovedGovernmentJobs();
+  const jobs = await getApprovedGovernmentJobs({ includeExpired: true });
   return [
     ...governmentJobCategories.map((category) => category.slug),
     ...jobs.map((job) => job.slug),

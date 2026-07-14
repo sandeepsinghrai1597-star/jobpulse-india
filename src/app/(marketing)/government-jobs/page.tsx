@@ -4,7 +4,7 @@ import {
   governmentJobCategories,
   governmentJobsDisclaimer,
 } from "@/lib/data/government-jobs";
-import { getApprovedGovernmentJobs } from "@/lib/government-jobs/live";
+import { classifyGovernmentUpdate, getApprovedGovernmentJobs } from "@/lib/government-jobs/live";
 import { SchemaScript } from "@/components/shared/schema-script";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { WhatsAppAlertCTA } from "@/components/shared/whatsapp-alert-cta";
@@ -45,7 +45,23 @@ const faq = [
 
 export default async function GovernmentJobsPage() {
   const approvedGovernmentJobs = await getApprovedGovernmentJobs();
-  const featuredJobs = approvedGovernmentJobs.slice(0, 6);
+  const recruitmentUpdates = approvedGovernmentJobs.filter(
+    (job) => classifyGovernmentUpdate(job.title) === "recruitment",
+  );
+  const admitCardUpdates = approvedGovernmentJobs.filter(
+    (job) => classifyGovernmentUpdate(job.title) === "admit-card",
+  );
+  const resultUpdates = approvedGovernmentJobs.filter((job) => {
+    const type = classifyGovernmentUpdate(job.title);
+    return type === "result" || type === "answer-key";
+  });
+  const featuredJobs = (recruitmentUpdates.length >= 6 ? recruitmentUpdates : approvedGovernmentJobs).slice(0, 6);
+
+  const updateColumns = [
+    { heading: "Latest Recruitment", items: recruitmentUpdates.slice(0, 10) },
+    { heading: "Admit Card / Exam City", items: admitCardUpdates.slice(0, 10) },
+    { heading: "Result / Answer Key", items: resultUpdates.slice(0, 10) },
+  ].filter((column) => column.items.length > 0);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -111,6 +127,35 @@ export default async function GovernmentJobsPage() {
       </div>
 
       <WhatsAppAlertCTA />
+
+      {updateColumns.length > 0 && (
+        <section className="mt-12">
+          <SectionHeading
+            eyebrow="Latest Updates"
+            title="Recruitment, admit card, and result updates at a glance"
+            description="Track every stage of a recruitment cycle — new notifications, admit card and exam city releases, and results with answer keys — from one hub."
+          />
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            {updateColumns.map((column) => (
+              <Card key={column.heading} className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
+                <CardContent className="space-y-4 p-6">
+                  <h2 className="font-heading text-xl font-semibold">{column.heading}</h2>
+                  <ul className="space-y-3 text-sm leading-6">
+                    {column.items.map((job) => (
+                      <li key={job.slug} className="border-b border-white/5 pb-2 last:border-b-0">
+                        <Link href={`/government-jobs/${job.slug}`} className="font-medium text-primary hover:underline">
+                          {job.title}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">Last date: {job.lastDate}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-12">
         <SectionHeading

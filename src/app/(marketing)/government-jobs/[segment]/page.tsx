@@ -31,8 +31,8 @@ function DetailGrid({
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
       <div className="grid divide-y divide-slate-200">
-        {items.map((item) => (
-          <div key={`${item.label}-${item.value}`} className="grid gap-2 px-5 py-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-4">
+        {items.map((item, index) => (
+          <div key={`${item.label}-${index}`} className="grid gap-2 px-5 py-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-4">
             <p className="text-sm font-semibold text-slate-950">{item.label}</p>
             <p className="text-sm leading-6 text-slate-600">{item.value}</p>
           </div>
@@ -53,18 +53,53 @@ function BulletSections({
 
   return (
     <div className="space-y-4">
-      {sections.map((section) => (
-        <div key={section.title} className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+      {sections.map((section, sectionIndex) => (
+        <div key={`${section.title}-${sectionIndex}`} className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
           <h3 className="text-lg font-semibold text-slate-950">{section.title}</h3>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-            {section.bullets.map((bullet) => (
-              <li key={`${section.title}-${bullet}`}>- {bullet}</li>
+            {section.bullets.map((bullet, bulletIndex) => (
+              <li key={`${bulletIndex}-${bullet}`}>- {bullet}</li>
             ))}
           </ul>
         </div>
       ))}
     </div>
   );
+}
+
+const GENERIC_LINK_LABELS = new Set([
+  "click here",
+  "click here to apply",
+  "here",
+  "open",
+  "link",
+  "download",
+  "visit",
+  "apply",
+]);
+
+function describeLinkFromHref(href: string) {
+  let url: URL | null = null;
+  try {
+    url = new URL(href);
+  } catch {
+    return "Official Link";
+  }
+
+  const path = `${url.pathname}${url.search}`.toLowerCase();
+  if (/(apply|registration|register|onlineform|online-form|candidate|login)/.test(path)) {
+    return `Apply Online (${url.hostname.replace(/^www\./, "")})`;
+  }
+  if (/(notification|advertisement|advt|\.pdf)/.test(path)) {
+    return `Official Notification (${url.hostname.replace(/^www\./, "")})`;
+  }
+  if (/(result|merit)/.test(path)) {
+    return `Result (${url.hostname.replace(/^www\./, "")})`;
+  }
+  if (/(admit|hallticket|hall-ticket)/.test(path)) {
+    return `Admit Card (${url.hostname.replace(/^www\./, "")})`;
+  }
+  return `Official Website (${url.hostname.replace(/^www\./, "")})`;
 }
 
 function LinkList({
@@ -76,11 +111,32 @@ function LinkList({
     return null;
   }
 
+  const seenHrefs = new Set<string>();
+  const cleanedLinks = links
+    .filter((link) => {
+      const href = link.href.trim();
+      if (!href || seenHrefs.has(href)) {
+        return false;
+      }
+      seenHrefs.add(href);
+      return true;
+    })
+    .map((link) => ({
+      href: link.href.trim(),
+      label: GENERIC_LINK_LABELS.has(link.label.trim().toLowerCase())
+        ? describeLinkFromHref(link.href.trim())
+        : link.label.trim(),
+    }));
+
+  if (!cleanedLinks.length) {
+    return null;
+  }
+
   return (
     <div className="space-y-3">
-      {links.map((link) => (
+      {cleanedLinks.map((link, index) => (
         <a
-          key={`${link.label}-${link.href}`}
+          key={`${link.href}-${index}`}
           href={link.href}
           target="_blank"
           rel="noopener noreferrer nofollow"
@@ -378,8 +434,8 @@ export default async function GovernmentJobsDynamicPage({
                   <h2 className="font-heading text-2xl font-semibold text-slate-950">Important Dates</h2>
                   <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
                     <ul className="space-y-2 text-sm leading-6 text-slate-600">
-                      {(job.importantDates ?? []).map((item) => (
-                        <li key={item}>- {item}</li>
+                      {(job.importantDates ?? []).map((item, index) => (
+                        <li key={`${index}-${item}`}>- {item}</li>
                       ))}
                     </ul>
                   </div>
@@ -511,8 +567,8 @@ export default async function GovernmentJobsDynamicPage({
             <CardContent className="space-y-5 p-8">
               <h2 className="font-heading text-2xl font-semibold text-slate-950">Frequently Asked Questions</h2>
               {(job.faq ?? []).length > 0 ? (
-                (job.faq ?? []).map((item) => (
-                  <div key={item.question} className="space-y-2 rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                (job.faq ?? []).map((item, index) => (
+                  <div key={`${index}-${item.question}`} className="space-y-2 rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
                     <h3 className="font-semibold text-slate-950">{item.question}</h3>
                     <p className="text-sm leading-6 text-slate-600">{item.answer}</p>
                   </div>

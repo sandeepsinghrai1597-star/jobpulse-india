@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { enrichNormalizedJob } from "@/server/job-fetcher/ai-enrichment";
+import { autoPublishNormalizedJob, isAutoPublishEnabled } from "@/server/job-fetcher/publisher";
 import { findExistingRawDuplicate, generateContentHash } from "@/server/job-fetcher/dedupe";
 import { filterJobsForSourceLocationScope } from "@/server/job-fetcher/location-filter";
 import { normalizeRawJob } from "@/server/job-fetcher/normalizer";
@@ -137,7 +138,7 @@ async function insertNormalizedJob(rawJobId: string, normalizedJob: Awaited<Retu
     throw new Error("Supabase admin client is not configured.");
   }
 
-  const { error } = await admin.from("normalized_jobs").insert({
+  const { data, error } = await admin.from("normalized_jobs").insert({
     raw_job_id: rawJobId,
     title: normalizedJob.title,
     slug: normalizedJob.slug ?? "",
@@ -166,11 +167,15 @@ async function insertNormalizedJob(rawJobId: string, normalizedJob: Awaited<Retu
     quality_score: normalizedJob.quality_score,
     duplicate_score: normalizedJob.duplicate_score,
     status: "pending_review",
-  } as never);
+  } as never)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     throw new Error(error.message);
   }
+
+  return (data as { id?: string } | null)?.id ?? null;
 }
 
 export async function runJobFetchForSource(
@@ -257,9 +262,37 @@ export async function runJobFetchForSource(
         });
         const enrichedJob = await enrichNormalizedJob(normalizedJob);
 
-        await insertNormalizedJob(rawRow.id, enrichedJob);
+        const normalizedJobId = await insertNormalizedJob(rawRow.id, enrichedJob);
         await updateRawJobStatus(rawRow.id, "parsed");
         counters.totalNew += 1;
+
+        if (normalizedJobId && isAutoPublishEnabled()) {
+          try {
+            const outcome = await autoPublishNormalizedJob({
+              normalizedJobId,
+              job: enrichedJob,
+              source,
+            });
+            if (outcome.published) {
+              counters.totalPublished = (counters.totalPublished ?? 0) + 1;
+              logBatch(batchId, source, "job_auto_published", {
+                normalizedJobId,
+                jobId: outcome.jobId,
+                slug: outcome.slug,
+              });
+            } else {
+              logBatch(batchId, source, "job_auto_publish_skipped", {
+                normalizedJobId,
+                reason: outcome.reason,
+              });
+            }
+          } catch (publishError) {
+            logBatch(batchId, source, "job_auto_publish_failed", {
+              normalizedJobId,
+              message: publishError instanceof Error ? publishError.message : "Unknown publish failure.",
+            });
+          }
+        }
       } catch (error) {
         counters.totalFailed += 1;
         await updateRawJobStatus(rawRow.id, "failed");
